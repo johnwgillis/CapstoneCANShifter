@@ -18,6 +18,7 @@
 /* Application file headers. */
 #include "LedHelper.h"
 #include "LdcSensor.h"
+#include "I2C.h"
 // #include "serial.h"
 // #include "comtest.h"
 // #include "print.h"
@@ -43,9 +44,6 @@ again. */
 /* The period between executions of the check task. */
 #define mainCHECK_PERIOD				( ( TickType_t ) 3000 / portTICK_PERIOD_MS  )
 
-/* An address in the EEPROM used to count resets.  This is used to check that
-the application is not unexpectedly resetting. */
-#define mainRESET_COUNT_ADDRESS			( ( void * ) 0x50 )
 
 /*
  * The task function for the "Check" task.
@@ -58,22 +56,27 @@ static void vErrorChecks( void *pvParameters );
  */
 static void prvCheckOtherTasksAreStillRunning( void );
 
-/*
- * Called on boot to increment a count stored in the EEPROM.  This is used to
- * ensure the CPU does not reset unexpectedly.
- */
-static void prvIncrementResetCount( void );
-
 // Application Idle Hook for FreeRTOS
 void vApplicationIdleHook( void );
 
 /*-----------------------------------------------------------*/
 
 int main( void ) {
-	//prvIncrementResetCount();
+	/* Setup I2C interface */
+	SoftI2CInit();
 
 	/* Setup the LED's for output. */
 	vLedHelperInitialise();
+
+	/* Setup the LDC sensor */
+	vLdcSensorInitialise();
+
+	// TEMP: test the LDC status
+	if(vLdcSensorReadStatus(0x2A) > 0) {
+		vLedHelperSetLED( 1, pdFALSE ); // set LED PB1 on
+	} else {
+		vLedHelperSetLED( 1, pdTRUE ); // set LED PB1 off
+	}
 
 	/* Create the standard demo tasks. */
 	//vAltStartComTestTasks( mainCOM_TEST_PRIORITY, mainCOM_TEST_BAUD_RATE, mainCOM_TEST_LED );
@@ -116,15 +119,6 @@ static void prvCheckOtherTasksAreStillRunning( void ) {
 		using console IO. */
 		vLedHelperToggleLED( mainCHECK_TASK_LED );
 	}
-}
-/*-----------------------------------------------------------*/
-
-static void prvIncrementResetCount( void ) {
-	unsigned char ucCount;
-
-	eeprom_read_block( &ucCount, mainRESET_COUNT_ADDRESS, sizeof( ucCount ) );
-	ucCount++;
-	eeprom_write_byte( mainRESET_COUNT_ADDRESS, ucCount );
 }
 /*-----------------------------------------------------------*/
 

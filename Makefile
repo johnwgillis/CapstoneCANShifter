@@ -47,6 +47,7 @@ SRC	= \
 main.c \
 LedHelper/LedHelper.c \
 LdcSensor/LdcSensor.c \
+I2C/I2C.c \
 $(SOURCE_DIR)/tasks.c \
 $(SOURCE_DIR)/queue.c \
 $(SOURCE_DIR)/croutine.c \
@@ -62,6 +63,7 @@ INCLUDE_DIRS = \
 -ISource/include \
 -ILedHelper/include \
 -ILdcSensor/include \
+-II2C/include \
 -ISerial/include
 
 
