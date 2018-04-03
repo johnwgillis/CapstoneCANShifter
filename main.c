@@ -17,6 +17,7 @@
 
 /* Application file headers. */
 #include "LedHelper.h"
+#include "LdcSensor.h"
 // #include "serial.h"
 // #include "comtest.h"
 // #include "print.h"
@@ -31,7 +32,7 @@ tasks just use the idle priority. */
 
 /* LED used by the serial port tasks.  This is toggled on each character Tx,
 and mainCOM_TEST_LED + 1 is toggles on each character Rx. */
-#define mainCOM_TEST_LED				( 4 )
+#define mainCOM_TEST_LED				( 3 )
 
 /* LED that is toggled by the check task.  The check task periodically checks
 that all the other tasks are operating without error.  If no errors are found
@@ -63,10 +64,13 @@ static void prvCheckOtherTasksAreStillRunning( void );
  */
 static void prvIncrementResetCount( void );
 
+// Application Idle Hook for FreeRTOS
+void vApplicationIdleHook( void );
+
 /*-----------------------------------------------------------*/
 
 int main( void ) {
-	prvIncrementResetCount();
+	//prvIncrementResetCount();
 
 	/* Setup the LED's for output. */
 	vLedHelperInitialise();

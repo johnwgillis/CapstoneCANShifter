@@ -23,7 +23,10 @@
 
 
 # MCU name
-MCU = atmega64c1
+MCU = ATMega64C1
+
+# MCU name used for avrdude
+MCU_AVR_DUDE = ATMega64
 
 # Output format. (can be srec, ihex, binary)
 FORMAT = ihex
@@ -43,6 +46,7 @@ PORT_DIR = $(SOURCE_DIR)/portable/GCC/ATMega64C1
 SRC	= \
 main.c \
 LedHelper/LedHelper.c \
+LdcSensor/LdcSensor.c \
 $(SOURCE_DIR)/tasks.c \
 $(SOURCE_DIR)/queue.c \
 $(SOURCE_DIR)/croutine.c \
@@ -52,6 +56,14 @@ $(PORT_DIR)/port.c
 
 # Serial/serial.c \
 # Serial/comtest.c \
+
+# Directories to include when compiling
+INCLUDE_DIRS = \
+-ISource/include \
+-ILedHelper/include \
+-ILdcSensor/include \
+-ISerial/include
+
 
 # If there is more than one source file, append them above, or modify and
 # uncomment the following:
@@ -90,7 +102,7 @@ DEBUG_LEVEL=-g
 WARNINGS=-Wall -Wextra -Wshadow -Wpointer-arith -Wbad-function-cast -Wcast-align -Wsign-compare \
 		-Waggregate-return -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wunused
 
-CFLAGS = -D GCC_MEGA_AVR -I. -ISource/include -ILedHelper/include -ISerial/include  \
+CFLAGS = -D GCC_MEGA_AVR -I. $(INCLUDE_DIRS) \
 $(DEBUG_LEVEL) -O$(OPT) \
 -fsigned-char -funsigned-bitfields -fpack-struct -fshort-enums \
 $(WARNINGS) \
@@ -149,7 +161,7 @@ LDFLAGS += -lm
 # Type: avrdude -c ?
 # to get a full listing.
 #
-AVRDUDE_PROGRAMMER = stk500
+AVRDUDE_PROGRAMMER = usbasp
 
 
 AVRDUDE_PORT = com1	   # programmer connected to serial device
@@ -158,7 +170,10 @@ AVRDUDE_PORT = com1	   # programmer connected to serial device
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 #AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
 
-AVRDUDE_FLAGS = -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER)
+AVRDUDE_IGNORE_SIG_FLAG = -F
+
+AVRDUDE_FLAGS = -p $(MCU_AVR_DUDE) -c $(AVRDUDE_PROGRAMMER) $(AVRDUDE_IGNORE_SIG_FLAG)
+#AVRDUDE_FLAGS = -p $(MCU_AVR_DUDE) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER)
 
 # Uncomment the following if you want avrdude's erase cycle counter.
 # Note that this counter needs to be initialized first using -Yn,
@@ -178,14 +193,6 @@ AVRDUDE_FLAGS = -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER)
 
 
 # ---------------------------------------------------------------------------
-
-# Define directories, if needed.
-DIRAVR = c:/winavr
-DIRAVRBIN = $(DIRAVR)/bin
-DIRAVRUTILS = $(DIRAVR)/utils/bin
-DIRINC = .
-DIRLIB = $(DIRAVR)/avr/lib
-
 
 # Define programs and commands.
 SHELL = sh
