@@ -47,6 +47,7 @@ SRC	= \
 main.c \
 LedHelper/LedHelper.c \
 LdcSensor/LdcSensor.c \
+Serial/serial.c \
 I2C/I2C.c \
 $(SOURCE_DIR)/tasks.c \
 $(SOURCE_DIR)/queue.c \
@@ -54,9 +55,6 @@ $(SOURCE_DIR)/croutine.c \
 $(SOURCE_DIR)/list.c \
 $(SOURCE_DIR)/portable/MemMang/heap_3.c \
 $(PORT_DIR)/port.c
-
-# Serial/serial.c \
-# Serial/comtest.c \
 
 # Directories to include when compiling
 INCLUDE_DIRS = \

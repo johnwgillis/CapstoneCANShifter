@@ -8,7 +8,7 @@ www.eXtremeElectronics.co.in
 **********************************************************/
  
 #ifndef F_CPU
-# define F_CPU 16000000UL
+#define F_CPU 16000000UL
 #endif
 
 #include <avr/io.h>
@@ -16,13 +16,13 @@ www.eXtremeElectronics.co.in
 
 #include "I2C.h"
 
-#define Q_DEL _delay_loop_2(3)
-#define H_DEL _delay_loop_2(5)
+#define Q_DEL _delay_us(4)
+#define H_DEL _delay_us(4)
 
 void SoftI2CInit()
 {
-	SDAPORT&=(1<<SDA);
-	SCLPORT&=(1<<SCL);
+	SDAPORT &= ~(1<<SDA);
+	SCLPORT &= ~(1<<SCL);
 	
 	SOFT_I2C_SDA_HIGH;	
 	SOFT_I2C_SCL_HIGH;	

@@ -16,8 +16,10 @@ void vLdcSensorInitialise( void ) {}
 uint32_t vLdcSensorReadChannel( uint8_t deviceAddress, uint8_t channel ) {
     uint32_t result = 0;
 
-    uint8_t MSB_temp_result = 0;
-    uint8_t LSB_temp_result = 0;
+    uint8_t deviceAddressRead = (deviceAddress<<1) | 0x01;
+
+    uint32_t MSB_temp_result = 0;
+    uint32_t LSB_temp_result = 0;
 
     uint8_t channelMSB = 0x00;
     uint8_t channelLSB = 0x00;
@@ -48,7 +50,7 @@ uint32_t vLdcSensorReadChannel( uint8_t deviceAddress, uint8_t channel ) {
 	vTaskSuspendAll();
     {   
         SoftI2CStart();
-        SoftI2CWriteByte(deviceAddress); // LDC address
+        SoftI2CWriteByte(deviceAddressRead); // LDC address
         SoftI2CWriteByte(channelMSB); // Register for channel's MSB
         MSB_temp_result = SoftI2CReadByte(1); // Read with ACK the MSB
         LSB_temp_result = SoftI2CReadByte(0); // Read with NACK the LSB
@@ -64,7 +66,7 @@ uint32_t vLdcSensorReadChannel( uint8_t deviceAddress, uint8_t channel ) {
 	vTaskSuspendAll();
     {   
         SoftI2CStart();
-        SoftI2CWriteByte(deviceAddress); // LDC address
+        SoftI2CWriteByte(deviceAddressRead); // LDC address
         SoftI2CWriteByte(channelLSB); // Register for channel's LSB
         MSB_temp_result = SoftI2CReadByte(1); // Read with ACK the MSB
         LSB_temp_result = SoftI2CReadByte(0); // Read with NACK the LSB
@@ -83,14 +85,16 @@ uint32_t vLdcSensorReadChannel( uint8_t deviceAddress, uint8_t channel ) {
 uint16_t vLdcSensorReadStatus( uint8_t deviceAddress ) {
     uint16_t result = 0;
 
-    uint8_t MSB_temp_result = 0;
-    uint8_t LSB_temp_result = 0;
+    uint8_t deviceAddressRead = (deviceAddress<<1) | 0x01;
+
+    uint16_t MSB_temp_result = 0;
+    uint16_t LSB_temp_result = 0;
 
     // Read the LDC status
 	vTaskSuspendAll();
     {   
         SoftI2CStart();
-        SoftI2CWriteByte(deviceAddress); // LDC address
+        SoftI2CWriteByte(deviceAddressRead); // LDC address
         SoftI2CWriteByte(0x18); // Register for LDC status from datasheet
         MSB_temp_result = SoftI2CReadByte(1); // Read with ACK the MSB
         LSB_temp_result = SoftI2CReadByte(0); // Read with NACK the LSB
@@ -98,7 +102,7 @@ uint16_t vLdcSensorReadStatus( uint8_t deviceAddress ) {
     }
     xTaskResumeAll();
 
-    // Shift the LSB data into the final result
+    // Shift the status data into the final result
     result |= ( MSB_temp_result << 8);
     result |= ( LSB_temp_result << 0);
 

@@ -10,20 +10,19 @@
  * Simple parallel port IO routines.
  *-----------------------------------------------------------*/
 
-#define partstALL_BITS_OUTPUT			( ( unsigned char ) 0xff )
-#define partstALL_OUTPUTS_OFF			( ( unsigned char ) 0xff )
 #define partstMAX_OUTPUT_LED			( ( unsigned char ) 7 )
 
-static volatile unsigned char ucCurrentOutputValue = partstALL_OUTPUTS_OFF; /*lint !e956 File scope parameters okay here. */
+#define DDR DDRC
+#define PORT PORTC
 
 /*-----------------------------------------------------------*/
 
-void vLedHelperInitialise( void ) {
-	ucCurrentOutputValue = partstALL_OUTPUTS_OFF;
-
-	/* Set port B direction to outputs.  Start with all output off. */
-	DDRB = partstALL_BITS_OUTPUT;
-	PORTB = ucCurrentOutputValue;
+void vLedHelperInitialiseLED( unsigned portBASE_TYPE uxLED ) {
+	/* Set port B direction to output.  Start with output off. */
+	unsigned char ucBit = ( unsigned char ) 1;
+	ucBit <<= uxLED;
+	DDR |= ucBit;
+	PORT |= ucBit;
 }
 /*-----------------------------------------------------------*/
 
@@ -36,13 +35,10 @@ void vLedHelperSetLED( unsigned portBASE_TYPE uxLED, signed portBASE_TYPE xValue
 		vTaskSuspendAll();
 		{
 			if( xValue == pdTRUE ) {
-				ucBit ^= ( unsigned char ) 0xff;
-				ucCurrentOutputValue &= ucBit;
+				PORT |= ucBit;
 			} else {
-				ucCurrentOutputValue |= ucBit;
+				PORT &= ~ucBit;
 			}
-
-			PORTB = ucCurrentOutputValue;
 		}
 		xTaskResumeAll();
 	}
@@ -57,13 +53,11 @@ void vLedHelperToggleLED( unsigned portBASE_TYPE uxLED ) {
 
 		vTaskSuspendAll();
 		{
-			if( ucCurrentOutputValue & ucBit ) {
-				ucCurrentOutputValue &= ~ucBit;
+			if( PORT & ucBit ) {
+				PORT &= ~ucBit;
 			} else {
-				ucCurrentOutputValue |= ucBit;
+				PORT |= ucBit;
 			}
-
-			PORTB = ucCurrentOutputValue;
 		}
 		xTaskResumeAll();			
 	}

@@ -2,182 +2,46 @@
  * By John Gillis (jgillis@jgillis.com)
  */
 
-/* BASIC INTERRUPT DRIVEN SERIAL PORT DRIVER. */
-
-
 #include <stdlib.h>
 #include <avr/io.h>
-#include <avr/interrupt.h>
-#include "FreeRTOS.h"
-#include "queue.h"
-#include "task.h"
+#include <string.h>
 #include "serial.h"
 
-#include <avr/pgmspace.h>
-#include <util/atomic.h>
+#ifndef F_CPU
+#define F_CPU 16000000UL                  // Clock frequency
+#endif
 
-#define serBAUD_DIV_CONSTANT			( ( unsigned long ) 16 )
+#define MAX_STRING_SIZE 100
 
-/* Constants for writing to UCSRB. */
-#define serRX_INT_ENABLE				( ( unsigned char ) 0x80 )
-#define serRX_ENABLE					( ( unsigned char ) 0x10 )
-#define serTX_ENABLE					( ( unsigned char ) 0x08 )
-#define serTX_INT_ENABLE				( ( unsigned char ) 0x20 )
+// ********************************* Initialisation UART ********************************
 
-/* Constants for writing to UCSRC. */
-#define serUCSRC_SELECT					( ( unsigned char ) 0x80 )
-#define serEIGHT_DATA_BITS				( ( unsigned char ) 0x06 )
+void serial_init(unsigned long baud) {
+	LINCR = (1 << LSWRES);
+	LINBRRH = (((F_CPU/baud)/32)-1)>>8;
+	LINBRRL = (((F_CPU/baud)/32)-1);
 
-static QueueHandle_t xRxedChars; 
-static QueueHandle_t xCharsForTx; 
+	LINCR = (1<<LENA)|(1<<LCMD2)|(1<<LCMD1)|(1<<LCMD0);
 
-#define vInterruptOn()										\
-{															\
-	unsigned char ucByte;								\
-															\
-	ucByte = UCSRB;											\
-	ucByte |= serTX_INT_ENABLE;								\
-	UCSRB = ucByte;											\
-}																				
-/*-----------------------------------------------------------*/
-
-#define vInterruptOff()										\
-{															\
-	unsigned char ucInByte;								\
-															\
-	ucInByte = UCSRB;										\
-	ucInByte &= ~serTX_INT_ENABLE;							\
-	UCSRB = ucInByte;										\
-}
-/*-----------------------------------------------------------*/
-
-xComPortHandle xSerialPortInitMinimal( unsigned long ulWantedBaud, unsigned portBASE_TYPE uxQueueLength )
-{
-unsigned long ulBaudRateCounter;
-unsigned char ucByte;
-
-	portENTER_CRITICAL();
-	{
-		/* Create the queues used by the com test task. */
-		xRxedChars = xQueueCreate( uxQueueLength, ( unsigned portBASE_TYPE ) sizeof( signed char ) );
-		xCharsForTx = xQueueCreate( uxQueueLength, ( unsigned portBASE_TYPE ) sizeof( signed char ) );
-
-		/* Calculate the baud rate register value from the equation in the
-		data sheet. */
-		ulBaudRateCounter = ( configCPU_CLOCK_HZ / ( serBAUD_DIV_CONSTANT * ulWantedBaud ) ) - ( unsigned long ) 1;
-
-		/* Set the baud rate. */	
-		ucByte = ( unsigned char ) ( ulBaudRateCounter & ( unsigned long ) 0xff );	
-		UBRRL = ucByte;
-
-		ulBaudRateCounter >>= ( unsigned long ) 8;
-		ucByte = ( unsigned char ) ( ulBaudRateCounter & ( unsigned long ) 0xff );	
-		UBRRH = ucByte;
-
-		/* Enable the Rx interrupt.  The Tx interrupt will get enabled
-		later. Also enable the Rx and Tx. */
-		UCSRB = ( serRX_INT_ENABLE | serRX_ENABLE | serTX_ENABLE );
-
-		/* Set the data bits to 8. */
-		UCSRC = ( serUCSRC_SELECT | serEIGHT_DATA_BITS );
-	}
-	portEXIT_CRITICAL();
-	
-	/* Unlike other ports, this serial code does not allow for more than one
-	com port.  We therefore don't return a pointer to a port structure and can
-	instead just return NULL. */
-	return NULL;
-}
-/*-----------------------------------------------------------*/
-
-signed portBASE_TYPE xSerialGetChar( xComPortHandle pxPort, signed char *pcRxedChar, TickType_t xBlockTime )
-{
-	/* Only one port is supported. */
-	( void ) pxPort;
-
-	/* Get the next character from the buffer.  Return false if no characters
-	are available, or arrive before xBlockTime expires. */
-	if( xQueueReceive( xRxedChars, pcRxedChar, xBlockTime ) )
-	{
-		return pdTRUE;
-	}
-	else
-	{
-		return pdFALSE;
-	}
-}
-/*-----------------------------------------------------------*/
-
-signed portBASE_TYPE xSerialPutChar( xComPortHandle pxPort, signed char cOutChar, TickType_t xBlockTime )
-{
-	/* Only one port is supported. */
-	( void ) pxPort;
-
-	/* Return false if after the block time there is no room on the Tx queue. */
-	if( xQueueSend( xCharsForTx, &cOutChar, xBlockTime ) != pdPASS )
-	{
-		return pdFAIL;
-	}
-
-	vInterruptOn();
-
-	return pdPASS;
-}
-/*-----------------------------------------------------------*/
-
-void vSerialClose( xComPortHandle xPort )
-{
-unsigned char ucByte;
-
-	/* The parameter is not used. */
-	( void ) xPort;
-
-	/* Turn off the interrupts.  We may also want to delete the queues and/or
-	re-install the original ISR. */
-
-	portENTER_CRITICAL();
-	{
-		vInterruptOff();
-		ucByte = UCSRB;
-		ucByte &= ~serRX_INT_ENABLE;
-		UCSRB = ucByte;
-	}
-	portEXIT_CRITICAL();
-}
-/*-----------------------------------------------------------*/
-
-ISR( USART_RX_vect )
-{
-signed char cChar;
-signed portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-
-	/* Get the character and post it on the queue of Rxed characters.
-	If the post causes a task to wake force a context switch as the woken task
-	may have a higher priority than the task we have interrupted. */
-	cChar = UDR;
-
-	xQueueSendFromISR( xRxedChars, &cChar, &xHigherPriorityTaskWoken );
-
-	if( xHigherPriorityTaskWoken != pdFALSE )
-	{
-		taskYIELD();
-	}
-}
-/*-----------------------------------------------------------*/
-
-ISR( USART_UDRE_vect )
-{
-signed char cChar, cTaskWoken;
-
-	if( xQueueReceiveFromISR( xCharsForTx, &cChar, &cTaskWoken ) == pdTRUE )
-	{
-		/* Send the next character queued for Tx. */
-		UDR = cChar;
-	}
-	else
-	{
-		/* Queue empty, nothing to send. */
-		vInterruptOff();
-	}
+	return;
 }
 
+
+ // ************************************** UART Tx **************************************
+ void serial_transmit(char byte_data) {
+    while (LINSIR & (1 << LBUSY));          // Wait while the UART is busy.
+    LINDAT = byte_data;
+    return;
+}
+
+/* ----------------------------------------------------------------------------------- */
+
+// Sends a string until hits a \0
+void serial_transmit_string(char* string) {
+	int i = 0;
+	char endChar[] = "\0";
+	while(strcmp(&string[i], endChar)!=0 && i < MAX_STRING_SIZE) {
+		serial_transmit(string[i]);
+		i++;
+	}
+	return;
+}

@@ -5,9 +5,7 @@
 #ifndef LEDHELPER_H
 #define LEDHELPER_H
 
-#define partstDEFAULT_PORT_ADDRESS		( ( uint16_t ) 0x378 )
-
-void vLedHelperInitialise( void );
+void vLedHelperInitialiseLED( unsigned portBASE_TYPE uxLED );
 void vLedHelperSetLED( UBaseType_t uxLED, BaseType_t xValue );
 void vLedHelperToggleLED( UBaseType_t uxLED );
 
