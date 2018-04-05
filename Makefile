@@ -49,6 +49,7 @@ LedHelper/LedHelper.c \
 LdcSensor/LdcSensor.c \
 Serial/serial.c \
 I2C/I2C.c \
+ShifterManager/ShifterManager.c \
 $(SOURCE_DIR)/tasks.c \
 $(SOURCE_DIR)/queue.c \
 $(SOURCE_DIR)/croutine.c \
@@ -62,6 +63,7 @@ INCLUDE_DIRS = \
 -ILedHelper/include \
 -ILdcSensor/include \
 -II2C/include \
+-IShifterManager/include \
 -ISerial/include
 
 

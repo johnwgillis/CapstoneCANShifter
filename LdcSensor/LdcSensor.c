@@ -10,7 +10,6 @@
 /*-----------------------------------------------------------*/
 
 void vLdcSensorInitialiseConfig( uint8_t deviceAddress );
-void vLdcSensorWriteRegister( uint8_t deviceAddress, uint8_t registerAddress, uint16_t data );
 
 // LDC Register Config
 #define CONFIG_REG 0x1A
@@ -44,7 +43,7 @@ void vLdcSensorInitialise( void ) {
 
     // Config the LDC's correctly
     vLdcSensorInitialiseConfig(LDC_1_Addr);
-    //vLdcSensorInitialiseConfig(LDC_2_Addr);
+    vLdcSensorInitialiseConfig(LDC_2_Addr);
 }
 /*-----------------------------------------------------------*/
 
@@ -193,60 +192,10 @@ uint32_t vLdcSensorReadChannel( uint8_t deviceAddress, uint8_t channel ) {
 /*-----------------------------------------------------------*/
 
 uint16_t vLdcSensorReadStatus( uint8_t deviceAddress ) {
-    uint16_t result = 0;
-
-    uint16_t MSB_temp_result = 0;
-    uint16_t LSB_temp_result = 0;
-
-    // Read the LDC status
-	vTaskSuspendAll();
-    {   
-        beginTransmission(deviceAddress);
-        write(0x18); // Register for LDC status from datasheet
-        endTransmission(pdFALSE); // don't send stop
-        requestFrom(deviceAddress, 2, pdTRUE); // send stop
-    }
-    xTaskResumeAll();
-
-    // Read out of I2C buffer
-    MSB_temp_result = read();
-    LSB_temp_result = read();
-    MSB_temp_result = (MSB_temp_result != (uint16_t)(-1)) ? MSB_temp_result : 0x00;
-    LSB_temp_result = (LSB_temp_result != (uint16_t)(-1)) ? LSB_temp_result : 0x00;
-
-    // Shift the status data into the final result
-    result |= ( MSB_temp_result << 8);
-    result |= ( LSB_temp_result << 0);
-
-    return result;
+    return vLdcSensorReadRegister(deviceAddress, 0x18); // Register for LDC status from datasheet
 }
 /*-----------------------------------------------------------*/
 
 uint16_t vLdcSensorReadDeviceId( uint8_t deviceAddress ) {
-    uint16_t result = 0;
-
-    uint16_t MSB_temp_result = 0;
-    uint16_t LSB_temp_result = 0;
-
-    // Read the LDC status
-	vTaskSuspendAll();
-    {   
-        beginTransmission(deviceAddress);
-        write(0x7F); // Register for LDC device id from datasheet
-        endTransmission(pdFALSE); // don't send stop
-        requestFrom(deviceAddress, 2, pdTRUE); // send stop
-    }
-    xTaskResumeAll();
-
-    // Read out of I2C buffer
-    MSB_temp_result = read();
-    LSB_temp_result = read();
-    MSB_temp_result = (MSB_temp_result != (uint16_t)(-1)) ? MSB_temp_result : 0x00;
-    LSB_temp_result = (LSB_temp_result != (uint16_t)(-1)) ? LSB_temp_result : 0x00;
-
-    // Shift the status data into the final result
-    result |= ( MSB_temp_result << 8);
-    result |= ( LSB_temp_result << 0);
-
-    return result;
+    return vLdcSensorReadRegister(deviceAddress, 0x7F); // Register for LDC device id from datasheet
 }
