@@ -103,7 +103,8 @@ int main( void ) {
 	// serial_transmit_string("\n\0");
 
 	/* Create the tasks defined within this file. */
-	xTaskCreate( vErrorChecks, "Check", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY, NULL );
+	unsigned short additionalStackSize = 64; // Since printing a lot (temp until full calculation of bytes used)
+	xTaskCreate( vErrorChecks, "Check", configMINIMAL_STACK_SIZE+additionalStackSize, NULL, mainCHECK_TASK_PRIORITY, NULL );
 
 	/* In this port, to use preemptive scheduler define configUSE_PREEMPTION
 	as 1 in portmacro.h.  To use the cooperative scheduler define
@@ -144,19 +145,15 @@ static void prvCheckOtherTasksAreStillRunning( void ) {
 		serial_transmit_string("\n\nLDC 1 Channel 3 Data: \0");
 		uint32_t ldcData = vLdcSensorReadChannel(LDC_1_Addr, 3);
 
-		// Prints the channel data 16 chars at time to avoid a chip reset
-		char ldcDataString[17];
-		ldcDataString[16] = '\0';
-		for (int i = 15; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
-		serial_transmit_string(ldcDataString);
-		for (int i = 15; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
+		// Prints the channel data
+		char ldcDataString[33];
+		ldcDataString[32] = '\0';
+		for (int i = 31; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
 		serial_transmit_string(ldcDataString);
 		serial_transmit_string("\n\0");
 
-
-		// Print debug register
-		//printLDCRegister(0x1A); // Config
-		//printLDCRegister(0x18); // Status
+		// Print register(s) to debug
+		printLDCRegister(0x18); // Status
 	}
 }
 /*-----------------------------------------------------------*/
@@ -170,19 +167,19 @@ void vApplicationIdleHook( void ) {
 void printLDCRegister( uint8_t registerAddress ) {
 	serial_transmit_string("\nLDC 1 Register: \0");
 
+	char ldcString[17];
+
 	// Print reg address
 	uint8_t ldcRegAddr = registerAddress;
-	char ldcRegAddrString[9];
-	ldcRegAddrString[8] = '\0';
-	for (int i = 7; i >= 0; i--, ldcRegAddr>>=1) { ldcRegAddrString[i] = (ldcRegAddr & 1) + '0'; }
-	serial_transmit_string(ldcRegAddrString);
+	ldcString[8] = '\0';
+	for (int i = 7; i >= 0; i--, ldcRegAddr>>=1) { ldcString[i] = (ldcRegAddr & 1) + '0'; }
+	serial_transmit_string(ldcString);
 	serial_transmit_string(" = \0");
 
 	// Print reg value
 	uint16_t ldcRegVal = vLdcSensorReadRegister(LDC_1_Addr, registerAddress);
-	char ldcRegValString[17];
-	ldcRegValString[16] = '\0';
-	for (int i = 15; i >= 0; i--, ldcRegVal>>=1) { ldcRegValString[i] = (ldcRegVal & 1) + '0'; }
-	serial_transmit_string(ldcRegValString);
+	ldcString[16] = '\0';
+	for (int i = 15; i >= 0; i--, ldcRegVal>>=1) { ldcString[i] = (ldcRegVal & 1) + '0'; }
+	serial_transmit_string(ldcString);
 	serial_transmit_string("\n\0");
 }

@@ -23,6 +23,18 @@ void vLdcSensorWriteRegister( uint8_t deviceAddress, uint8_t registerAddress, ui
 #define ERROR_CONFIG_REG 0x19
 #define ERROR_CONFIG_VAL 0xF800
 
+#define CLOCK_DIVIDERS0_REG 0x14
+#define CLOCK_DIVIDERS0_VAL 0x1001
+
+#define CLOCK_DIVIDERS1_REG 0x15
+#define CLOCK_DIVIDERS1_VAL CLOCK_DIVIDERS0_VAL
+
+#define CLOCK_DIVIDERS2_REG 0x16
+#define CLOCK_DIVIDERS2_VAL CLOCK_DIVIDERS0_VAL
+
+#define CLOCK_DIVIDERS3_REG 0x17
+#define CLOCK_DIVIDERS3_VAL CLOCK_DIVIDERS0_VAL
+
 /*-----------------------------------------------------------*/
 
 void vLdcSensorInitialise( void ) {
@@ -45,7 +57,12 @@ void vLdcSensorInitialiseConfig( uint8_t deviceAddress ) {
 
         // Write all the config registers
         vLdcSensorWriteRegister(deviceAddress, MUX_CONFIG_REG, MUX_CONFIG_VAL); // Write MUX_CONFIG
-        vLdcSensorWriteRegister(deviceAddress, ERROR_CONFIG_REG, ERROR_CONFIG_VAL); // Write MUX_CONFIG
+        vLdcSensorWriteRegister(deviceAddress, ERROR_CONFIG_REG, ERROR_CONFIG_VAL); // Write ERROR_CONFIG
+
+        vLdcSensorWriteRegister(deviceAddress, CLOCK_DIVIDERS0_REG, CLOCK_DIVIDERS0_VAL); // Write CLOCK_DIVIDERS0
+        vLdcSensorWriteRegister(deviceAddress, CLOCK_DIVIDERS1_REG, CLOCK_DIVIDERS1_VAL); // Write CLOCK_DIVIDERS1
+        vLdcSensorWriteRegister(deviceAddress, CLOCK_DIVIDERS2_REG, CLOCK_DIVIDERS2_VAL); // Write CLOCK_DIVIDERS2
+        vLdcSensorWriteRegister(deviceAddress, CLOCK_DIVIDERS3_REG, CLOCK_DIVIDERS3_VAL); // Write CLOCK_DIVIDERS3
 
 
         vLdcSensorWriteRegister(deviceAddress, CONFIG_REG, CONFIG_VAL_WAKE); // Write CONFIG (wake from sleep)
