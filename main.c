@@ -44,11 +44,6 @@ again. */
 /* The period between executions of the check task. */
 #define mainCHECK_PERIOD				( ( TickType_t ) 3000 / portTICK_PERIOD_MS  )
 
-// LDC 1 I2C Address
-#define LDC_1_Addr 0x2A
-// LDC 2 I2C Address
-#define LDC_3_Addr 0x2C
-
 /*
  * The task function for the "Check" task.
  */
@@ -63,15 +58,13 @@ static void prvCheckOtherTasksAreStillRunning( void );
 // Application Idle Hook for FreeRTOS
 void vApplicationIdleHook( void );
 
+void printLDCRegister( uint8_t registerAddress );
+
 /*-----------------------------------------------------------*/
 
 int main( void ) {
-	/* Setup I2C interface */
-	SoftI2CInit();
-
 	/* Setup the LED's for output. */
 	vLedHelperInitialiseLED(mainCHECK_TASK_LED);
-	//vLedHelperInitialiseLED(1);
 
 	/* Setup the LDC sensor */
 	vLdcSensorInitialise();
@@ -82,86 +75,23 @@ int main( void ) {
 	// Print welcome on UART
 	serial_transmit_string("\nCapstone CAN Shifter\n\0");
 
-	#define Q_DEL _delay_us(4)
-
-	// TEST I2C
-	uint8_t ack;
-	vTaskSuspendAll();
-    {   
-        // SoftI2CStart();
-        // ack = SoftI2CWriteByte(0x58); // LDC address
-        // //SoftI2CStop();
-
-		DDRB &= ~(1 << SDA); Q_DEL; // Turn data on
-		DDRB &= ~(1 << SCL); Q_DEL; // Turn clk on
-		
-		DDRB |= (1 << SDA); Q_DEL; // Turn data off
-		
-
-		// Sends 0
-		DDRB |= (1 << SDA); Q_DEL; // Turn data off
-		DDRB &= ~(1 << SCL); Q_DEL; // Turn clk on
-		DDRB |= (1 << SCL); Q_DEL; // Turn clk off
-
-		// Sends 1
-		DDRB &= ~(1 << SDA); Q_DEL; // Turn data on
-		DDRB &= ~(1 << SCL); Q_DEL; // Turn clk on
-		DDRB |= (1 << SCL); Q_DEL; // Turn clk off
-
-		// Sends 0
-		DDRB |= (1 << SDA); Q_DEL; // Turn data off
-		DDRB &= ~(1 << SCL); Q_DEL; // Turn clk on
-		DDRB |= (1 << SCL); Q_DEL; // Turn clk off
-
-		// Sends 1
-		DDRB &= ~(1 << SDA); Q_DEL; // Turn data on
-		DDRB &= ~(1 << SCL); Q_DEL; // Turn clk on
-		DDRB |= (1 << SCL); Q_DEL; // Turn clk off
-
-		// Sends 1
-		DDRB &= ~(1 << SDA); Q_DEL; // Turn data on
-		DDRB &= ~(1 << SCL); Q_DEL; // Turn clk on
-		DDRB |= (1 << SCL); Q_DEL; // Turn clk off
-
-		// Sends 0
-		DDRB |= (1 << SDA); Q_DEL; // Turn data off
-		DDRB &= ~(1 << SCL); Q_DEL; // Turn clk on
-		DDRB |= (1 << SCL); Q_DEL; // Turn clk off
-
-		// Sends 0
-		DDRB |= (1 << SDA); Q_DEL; // Turn data off
-		DDRB &= ~(1 << SCL); Q_DEL; // Turn clk on
-		DDRB |= (1 << SCL); Q_DEL; // Turn clk off
-
-		// Sends 0
-		DDRB |= (1 << SDA); Q_DEL; // Turn data off
-		DDRB &= ~(1 << SCL); Q_DEL; // Turn clk on
-		DDRB |= (1 << SCL); Q_DEL; // Turn clk off
-
-
-		// Check for ack (1 for NACK ; 0 for ACK)
-		DDRB &= ~(1 << SDA); Q_DEL; // Turn data on
-		DDRB &= ~(1 << SCL); Q_DEL; // Turn clk on
-
-		ack = (SDAPIN & (1<<SDA));
-
-		DDRB |= (1 << SCL); Q_DEL; // Turn clk off
-    }
-    xTaskResumeAll();
-	if(ack == 0) {
-		serial_transmit_string("\n\nTest Ack: 0\0");
-	} else {
-		serial_transmit_string("\n\nTest Ack: 1\0");
-	}
+	// Read the LDC 1 device id
+	serial_transmit_string("\nLDC 1 Device Id: \0");
+	uint16_t ldcDeviceId = vLdcSensorReadDeviceId(LDC_1_Addr);
+	char ldcDeviceIdString[17];
+	ldcDeviceIdString[16] = '\0';
+	for (int i = 15; i >= 0; i--, ldcDeviceId>>=1) { ldcDeviceIdString[i] = (ldcDeviceId & 1) + '0'; }
+	serial_transmit_string(ldcDeviceIdString);
+	serial_transmit_string("\n\0");
 
 	// Read the LDC 1 status
-	// serial_transmit_string("\n\nLDC 1 Status: \0");
-	// uint16_t ldcStatus = vLdcSensorReadStatus(LDC_3_Addr);
-	// char ldcStatusString[17];
-	// ldcStatusString[16] = '\0';
-	// for (int i = 15; i >= 0; i--, ldcStatus>>=1) { ldcStatusString[i] = (ldcStatus & 1) + '0'; }
-	// serial_transmit_string(ldcStatusString);
-	// serial_transmit_string("\n\0");
+	serial_transmit_string("\nLDC 1 Status: \0");
+	uint16_t ldcStatus = vLdcSensorReadStatus(LDC_1_Addr);
+	char ldcStatusString[17];
+	ldcStatusString[16] = '\0';
+	for (int i = 15; i >= 0; i--, ldcStatus>>=1) { ldcStatusString[i] = (ldcStatus & 1) + '0'; }
+	serial_transmit_string(ldcStatusString);
+	serial_transmit_string("\n\0");
 
 	// // Read the LDC 1 Channel 3
 	// serial_transmit_string("\n\nLDC 1 Channel 3: \0");
@@ -209,10 +139,50 @@ static void prvCheckOtherTasksAreStillRunning( void ) {
 		/* Toggle the LED if everything is okay so we know if an error occurs even if not
 		using console IO. */
 		vLedHelperToggleLED( mainCHECK_TASK_LED );
+
+		// Read the LDC 1 Channel 3
+		serial_transmit_string("\n\nLDC 1 Channel 3 Data: \0");
+		uint32_t ldcData = vLdcSensorReadChannel(LDC_1_Addr, 3);
+
+		// Prints the channel data 16 chars at time to avoid a chip reset
+		char ldcDataString[17];
+		ldcDataString[16] = '\0';
+		for (int i = 15; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
+		serial_transmit_string(ldcDataString);
+		for (int i = 15; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
+		serial_transmit_string(ldcDataString);
+		serial_transmit_string("\n\0");
+
+
+		// Print debug register
+		//printLDCRegister(0x1A); // Config
+		//printLDCRegister(0x18); // Status
 	}
 }
 /*-----------------------------------------------------------*/
 
 void vApplicationIdleHook( void ) {
 	//vCoRoutineSchedule();
+}
+/*-----------------------------------------------------------*/
+
+// TEMP: to debug LDC register config
+void printLDCRegister( uint8_t registerAddress ) {
+	serial_transmit_string("\nLDC 1 Register: \0");
+
+	// Print reg address
+	uint8_t ldcRegAddr = registerAddress;
+	char ldcRegAddrString[9];
+	ldcRegAddrString[8] = '\0';
+	for (int i = 7; i >= 0; i--, ldcRegAddr>>=1) { ldcRegAddrString[i] = (ldcRegAddr & 1) + '0'; }
+	serial_transmit_string(ldcRegAddrString);
+	serial_transmit_string(" = \0");
+
+	// Print reg value
+	uint16_t ldcRegVal = vLdcSensorReadRegister(LDC_1_Addr, registerAddress);
+	char ldcRegValString[17];
+	ldcRegValString[16] = '\0';
+	for (int i = 15; i >= 0; i--, ldcRegVal>>=1) { ldcRegValString[i] = (ldcRegVal & 1) + '0'; }
+	serial_transmit_string(ldcRegValString);
+	serial_transmit_string("\n\0");
 }

@@ -1,121 +1,95 @@
-/**********************************************************
-
-Software I2C Library for AVR Devices.
-
-Copyright 2008-2012
-eXtreme Electronics, India
-www.eXtremeElectronics.co.in
-**********************************************************/
-
-
-#ifndef _I2CSOFT_H
-#define _I2CSOFT_H
-
-/* 
-I/O Configuration 
-*/
-
-#define SCLPORT	PORTB	//TAKE PORTB as SCL OUTPUT WRITE
-#define SCLDDR	DDRB	//TAKE DDRB as SCL INPUT/OUTPUT configure
-
-#define SDAPORT	PORTB	//TAKE PORTB as SDA OUTPUT WRITE
-#define SDADDR	DDRB	//TAKE PORTB as SDA INPUT configure
-
-#define SDAPIN	PINB	//TAKE PORTB TO READ DATA
-#define SCLPIN	PINB	//TAKE PORTB TO READ DATA
-
-#define SCL	PD4		//PORTB.4 PIN AS SCL PIN
-#define SDA	PD3		//PORTB.3 PIN AS SDA PIN
+// SoftwareWire.h
+//
+// 2008, Raul wrote a I2C with bit banging as an exercise.
+// http://codinglab.blogspot.nl/2008/10/i2c-on-avr-using-bit-banging.html
+//
+// 2010-2012, Tod E. Kurt takes some tricks from Raul,
+// and wrote the SoftI2CMaster library for the Arduino environment.
+// https://github.com/todbot/SoftI2CMaster
+// http://todbot.com/blog/
+//
+// 2014-2015, Testato updates the SoftI2CMaster library to make it faster
+// and to make it compatible with the Arduino 1.x API
+// Also changed I2C waveform and added speed selection.
+//
+// 2015, Peter_n renames the library into "SoftwareWire",
+// and made it a drop-in replacement for the Wire library.
+//
+// 2018, John Gillis updated the library to work beyond Arduino
 
 
-#define SOFT_I2C_SDA_LOW	SDADDR|=((1<<SDA))
-#define SOFT_I2C_SDA_HIGH	SDADDR&=(~(1<<SDA))
+#ifndef SoftwareWire_h
+#define SoftwareWire_h
 
-#define SOFT_I2C_SCL_LOW	SCLDDR|=((1<<SCL))
-#define SOFT_I2C_SCL_HIGH	SCLDDR&=(~(1<<SCL))
+#include <stdlib.h>
+#include <avr/io.h>
 
+// Transmission status error, the return value of endTransmission()
+#define SOFTWAREWIRE_NO_ERROR       0
+#define SOFTWAREWIRE_BUFFER_FULL    1
+#define SOFTWAREWIRE_ADDRESS_NACK   2
+#define SOFTWAREWIRE_DATA_NACK      3
+#define SOFTWAREWIRE_OTHER          4
 
-/**********************************************************
-SoftI2CInit()
+#define SOFTWAREWIRE_BUFSIZE 32        // same as buffer size of Arduino Wire library
 
-Description:
-	Initializes the Soft I2C Engine.
-	Must be called before using any other lib functions.
-	
-Arguments:
-	NONE
-	
-Returns:
-	Nothing
+// Pins are on Port B
+void softwareWire_init_long(uint8_t sdaPin, uint8_t sclPin, int pullups);
+void softwareWire_init(uint8_t sdaPin, uint8_t sclPin);
 
-**********************************************************/
-void SoftI2CInit(void);	
+void begin(void);
+void setClock(uint32_t clock);
+void beginTransmission(uint8_t address);
+uint8_t endTransmission(int sendStop);
+uint8_t requestFrom(uint8_t address, uint8_t size, int sendStop);
+uint8_t write(uint8_t data);
+int available(void);
+int read(void);
+int readBytes(uint8_t* buf, uint8_t size);
+int peek(void);
+void setTimeout(long timeout);           // timeout to wait for the I2C bus
 
-/**********************************************************
-SoftI2CStart()
+// Class replacement struct
+typedef struct SoftwareWireVars {
+	uint8_t _sdaPin;
+  	uint8_t _sclPin;
+  	uint8_t _sdaBitMask;
+  	uint8_t _sclBitMask;
+  
+  	volatile uint8_t *_sdaPortReg;
+  	volatile uint8_t *_sclPortReg;
+  	volatile uint8_t *_sdaDirReg;
+  	volatile uint8_t *_sclDirReg;
+  	volatile uint8_t *_sdaPinReg;
+  	volatile uint8_t *_sclPinReg;
 
-Description:
-	Generates a START(S) condition on the bus.
-	NOTE: Can also be used for generating repeat start(Sr)
-	condition too.
-	
-Arguments:
-	NONE
-	
-Returns:
-	Nothing
+	uint8_t _transmission;      // transmission status, returned by endTransmission(). 0 is no error.
+  	uint16_t _i2cdelay;         // delay in micro seconds for sda and scl bits.
+  	int _pullups;           // using the internal pullups or not
+  	int _stretch;           // should code handle clock stretching by the slave or not.
+  	unsigned long _timeout;     // timeout in ms. When waiting for a clock pulse stretch. 2017, Fix issue #6
 
-**********************************************************/
-void SoftI2CStart(void);
+  	uint8_t rxBuf[SOFTWAREWIRE_BUFSIZE];   // buffer inside this class, a buffer per SoftwareWire.
+  	uint8_t rxBufPut;           // index to rxBuf, just after the last valid byte.
+  	uint8_t rxBufGet;           // index to rxBuf, the first new to be read byte.
 
-/**********************************************************
-SoftI2CStop()
+} SoftwareWireVars;
 
-Description:
-	Generates a STOP(P) condition on the bus.
-	NOTE: Can also be used for generating repeat start
-	condition too.
-	
-Arguments:
-	NONE
-	
-Returns:
-	Nothing
-
-**********************************************************/
-void SoftI2CStop(void);
-
-/**********************************************************
-SoftI2CWriteByte()
-
-Description:
-	Sends a Byte to the slave.
-	
-Arguments:
-	8 bit date to send to the slave.
-	
-Returns:
-	non zero if slave acknowledge the data receipt.
-	zero other wise.
-
-**********************************************************/
-uint8_t SoftI2CWriteByte(uint8_t data);
-
-/**********************************************************
-SoftI2CReadByte()
-
-Description:
-	Reads a byte from slave.
-	
-Arguments:
-	1 if you want to acknowledge the receipt to slave.
-	0 if you don't want to acknowledge the receipt to slave.
-	
-Returns:
-	The 8 bit data read from the slave.
-
-**********************************************************/
-uint8_t SoftI2CReadByte(uint8_t ack);
+  
+// private methods  
+void i2c_writebit( uint8_t c );
+uint8_t i2c_readbit(void);
+void i2c_init(void);
+int i2c_start(void);
+void i2c_repstart(void);
+void i2c_stop(void);
+uint8_t i2c_write(uint8_t c);
+uint8_t i2c_read(int ack);
 
 
-#endif 
+/* --- Arduino Code Reimplemented ---*/
+
+// safe access to millis counter
+uint64_t millis(void);
+
+#endif // SoftwareWire_h
