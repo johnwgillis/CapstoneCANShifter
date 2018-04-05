@@ -78,7 +78,7 @@ void vLdcSensorWriteRegister( uint8_t deviceAddress, uint8_t registerAddress, ui
     {   
         beginTransmission(deviceAddress);
         write(registerAddress);
-        write((uint8_t)(data << 8)); // Send MSB
+        write((uint8_t)(data >> 8)); // Send MSB
         write((uint8_t)(data)); // Send LSB
         endTransmission(pdTRUE); // send stop
     }

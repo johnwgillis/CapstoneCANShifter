@@ -58,7 +58,7 @@ static void prvCheckOtherTasksAreStillRunning( void );
 // Application Idle Hook for FreeRTOS
 void vApplicationIdleHook( void );
 
-void printLDCRegister( uint8_t registerAddress );
+void printLDCRegister( char* registerName, uint8_t registerAddress );
 
 /*-----------------------------------------------------------*/
 
@@ -103,7 +103,7 @@ int main( void ) {
 	// serial_transmit_string("\n\0");
 
 	/* Create the tasks defined within this file. */
-	unsigned short additionalStackSize = 64; // Since printing a lot (temp until full calculation of bytes used)
+	unsigned short additionalStackSize = 128; // Since printing a lot (temp until full calculation of bytes used)
 	xTaskCreate( vErrorChecks, "Check", configMINIMAL_STACK_SIZE+additionalStackSize, NULL, mainCHECK_TASK_PRIORITY, NULL );
 
 	/* In this port, to use preemptive scheduler define configUSE_PREEMPTION
@@ -141,10 +141,9 @@ static void prvCheckOtherTasksAreStillRunning( void ) {
 		using console IO. */
 		vLedHelperToggleLED( mainCHECK_TASK_LED );
 
-		// Read the LDC 1 Channel 3
-		serial_transmit_string("\n\nLDC 1 Channel 3 Data: \0");
-		uint32_t ldcData = vLdcSensorReadChannel(LDC_1_Addr, 3);
-
+		// Read the LDC 1 Channel 0
+		serial_transmit_string("\n\nLDC 1 Channel 0 Data: \0");
+		uint32_t ldcData = vLdcSensorReadChannel(LDC_1_Addr, 0);
 		// Prints the channel data
 		char ldcDataString[33];
 		ldcDataString[32] = '\0';
@@ -152,8 +151,37 @@ static void prvCheckOtherTasksAreStillRunning( void ) {
 		serial_transmit_string(ldcDataString);
 		serial_transmit_string("\n\0");
 
+		// Read the LDC 1 Channel 1
+		serial_transmit_string("LDC 1 Channel 1 Data: \0");
+		ldcData = vLdcSensorReadChannel(LDC_1_Addr, 1);
+		// Prints the channel data
+		ldcDataString[32] = '\0';
+		for (int i = 31; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
+		serial_transmit_string(ldcDataString);
+		serial_transmit_string("\n\0");
+
+		// Read the LDC 1 Channel 2
+		serial_transmit_string("LDC 1 Channel 2 Data: \0");
+		ldcData = vLdcSensorReadChannel(LDC_1_Addr, 2);
+		// Prints the channel data
+		ldcDataString[32] = '\0';
+		for (int i = 31; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
+		serial_transmit_string(ldcDataString);
+		serial_transmit_string("\n\0");
+
+		// Read the LDC 1 Channel 3
+		serial_transmit_string("LDC 1 Channel 3 Data: \0");
+		ldcData = vLdcSensorReadChannel(LDC_1_Addr, 3);
+		// Prints the channel data
+		ldcDataString[32] = '\0';
+		for (int i = 31; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
+		serial_transmit_string(ldcDataString);
+		serial_transmit_string("\n\0");
+
 		// Print register(s) to debug
-		printLDCRegister(0x18); // Status
+		printLDCRegister("Status\0", 0x18); // Status
+		printLDCRegister("Config\0", 0x1A); // Config
+		printLDCRegister("ERROR_CONFIG\0", 0x19); // ERROR_CONFIG
 	}
 }
 /*-----------------------------------------------------------*/
@@ -164,20 +192,16 @@ void vApplicationIdleHook( void ) {
 /*-----------------------------------------------------------*/
 
 // TEMP: to debug LDC register config
-void printLDCRegister( uint8_t registerAddress ) {
-	serial_transmit_string("\nLDC 1 Register: \0");
+void printLDCRegister( char* registerName, uint8_t registerAddress ) {
+	serial_transmit_string("LDC 1 Register: \0");
 
-	char ldcString[17];
-
-	// Print reg address
-	uint8_t ldcRegAddr = registerAddress;
-	ldcString[8] = '\0';
-	for (int i = 7; i >= 0; i--, ldcRegAddr>>=1) { ldcString[i] = (ldcRegAddr & 1) + '0'; }
-	serial_transmit_string(ldcString);
+	// Print reg name
+	serial_transmit_string(registerName);
 	serial_transmit_string(" = \0");
 
 	// Print reg value
 	uint16_t ldcRegVal = vLdcSensorReadRegister(LDC_1_Addr, registerAddress);
+	char ldcString[17];
 	ldcString[16] = '\0';
 	for (int i = 15; i >= 0; i--, ldcRegVal>>=1) { ldcString[i] = (ldcRegVal & 1) + '0'; }
 	serial_transmit_string(ldcString);
