@@ -13,14 +13,40 @@ void vLdcSensorInitialiseConfig( uint8_t deviceAddress );
 
 // LDC Register Config
 #define CONFIG_REG 0x1A
-#define CONFIG_VAL_SLEEP 0xE681
-#define CONFIG_VAL_WAKE 0xC681
+#define CONFIG_VAL_SLEEP 0x3401
+#define CONFIG_VAL_WAKE 0x1401
 
 #define MUX_CONFIG_REG 0x1B
-#define MUX_CONFIG_VAL 0xC20F
+#define MUX_CONFIG_VAL 0xC209
 
 #define ERROR_CONFIG_REG 0x19
-#define ERROR_CONFIG_VAL 0xF800
+#define ERROR_CONFIG_VAL 0x0001
+
+#define RCOUNT0_REG 0x08
+#define RCOUNT0_VAL 0xFFFF
+
+#define RCOUNT1_REG 0x09
+#define RCOUNT1_VAL RCOUNT0_VAL
+
+#define RCOUNT2_REG 0x0A
+#define RCOUNT2_VAL RCOUNT0_VAL
+
+#define RCOUNT3_REG 0x0B
+#define RCOUNT3_VAL RCOUNT0_VAL
+
+
+#define SETTLECOUNT0_REG 0x10
+#define SETTLECOUNT0_VAL 0x0400
+
+#define SETTLECOUNT1_REG 0x11
+#define SETTLECOUNT1_VAL SETTLECOUNT0_VAL
+
+#define SETTLECOUNT2_REG 0x12
+#define SETTLECOUNT2_VAL SETTLECOUNT0_VAL
+
+#define SETTLECOUNT3_REG 0x13
+#define SETTLECOUNT3_VAL SETTLECOUNT0_VAL
+
 
 #define CLOCK_DIVIDERS0_REG 0x14
 #define CLOCK_DIVIDERS0_VAL 0x1001
@@ -34,6 +60,19 @@ void vLdcSensorInitialiseConfig( uint8_t deviceAddress );
 #define CLOCK_DIVIDERS3_REG 0x17
 #define CLOCK_DIVIDERS3_VAL CLOCK_DIVIDERS0_VAL
 
+
+#define DRIVE_CURRENT0_REG 0x1E
+#define DRIVE_CURRENT0_VAL 0x8C40
+
+#define DRIVE_CURRENT1_REG 0x1F
+#define DRIVE_CURRENT1_VAL DRIVE_CURRENT0_VAL
+
+#define DRIVE_CURRENT2_REG 0x20
+#define DRIVE_CURRENT2_VAL DRIVE_CURRENT0_VAL
+
+#define DRIVE_CURRENT3_REG 0x21
+#define DRIVE_CURRENT3_VAL DRIVE_CURRENT0_VAL
+
 /*-----------------------------------------------------------*/
 
 void vLdcSensorInitialise( void ) {
@@ -43,7 +82,7 @@ void vLdcSensorInitialise( void ) {
 
     // Config the LDC's correctly
     vLdcSensorInitialiseConfig(LDC_1_Addr);
-    vLdcSensorInitialiseConfig(LDC_2_Addr);
+    //vLdcSensorInitialiseConfig(LDC_2_Addr); // Disabled due to hardware issue
 }
 /*-----------------------------------------------------------*/
 
@@ -62,6 +101,21 @@ void vLdcSensorInitialiseConfig( uint8_t deviceAddress ) {
         vLdcSensorWriteRegister(deviceAddress, CLOCK_DIVIDERS1_REG, CLOCK_DIVIDERS1_VAL); // Write CLOCK_DIVIDERS1
         vLdcSensorWriteRegister(deviceAddress, CLOCK_DIVIDERS2_REG, CLOCK_DIVIDERS2_VAL); // Write CLOCK_DIVIDERS2
         vLdcSensorWriteRegister(deviceAddress, CLOCK_DIVIDERS3_REG, CLOCK_DIVIDERS3_VAL); // Write CLOCK_DIVIDERS3
+
+        vLdcSensorWriteRegister(deviceAddress, SETTLECOUNT0_REG, SETTLECOUNT0_VAL); // Write SETTLECOUNT0
+        vLdcSensorWriteRegister(deviceAddress, SETTLECOUNT1_REG, SETTLECOUNT1_VAL); // Write SETTLECOUNT1
+        vLdcSensorWriteRegister(deviceAddress, SETTLECOUNT2_REG, SETTLECOUNT2_VAL); // Write SETTLECOUNT2
+        vLdcSensorWriteRegister(deviceAddress, SETTLECOUNT3_REG, SETTLECOUNT3_VAL); // Write SETTLECOUNT3
+
+        vLdcSensorWriteRegister(deviceAddress, RCOUNT0_REG, RCOUNT0_VAL); // Write RCOUNT0
+        vLdcSensorWriteRegister(deviceAddress, RCOUNT1_REG, RCOUNT1_VAL); // Write RCOUNT1
+        vLdcSensorWriteRegister(deviceAddress, RCOUNT2_REG, RCOUNT2_VAL); // Write RCOUNT2
+        vLdcSensorWriteRegister(deviceAddress, RCOUNT3_REG, RCOUNT3_VAL); // Write RCOUNT3
+
+        vLdcSensorWriteRegister(deviceAddress, DRIVE_CURRENT0_REG, DRIVE_CURRENT0_VAL); // Write DRIVE_CURRENT0
+        vLdcSensorWriteRegister(deviceAddress, DRIVE_CURRENT1_REG, DRIVE_CURRENT1_VAL); // Write DRIVE_CURRENT1
+        vLdcSensorWriteRegister(deviceAddress, DRIVE_CURRENT2_REG, DRIVE_CURRENT2_VAL); // Write DRIVE_CURRENT2
+        vLdcSensorWriteRegister(deviceAddress, DRIVE_CURRENT3_REG, DRIVE_CURRENT3_VAL); // Write DRIVE_CURRENT3
 
 
         vLdcSensorWriteRegister(deviceAddress, CONFIG_REG, CONFIG_VAL_WAKE); // Write CONFIG (wake from sleep)

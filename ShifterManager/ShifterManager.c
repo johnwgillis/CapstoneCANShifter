@@ -10,16 +10,17 @@
 #include "LdcSensor.h"
 
 /* The stack size used for the LDC Monitor task. */
-#define LDC_MONITOR_STACK_SIZE          256
+#define LDC_MONITOR_STACK_SIZE          1024
 /* The period between executions of the LDC Monitor task. */
 #define LDC_MONITOR_PERIOD				( ( TickType_t ) 100 / portTICK_PERIOD_MS  )
 
-static volatile ShifterPosition currentShifterPosition = POS_UNKNOWN;
+/* The initial wait after configuring the LDCs to allow them to stablize. */
+#define LDC_MONITOR_INITIAL_WAIT		( ( TickType_t ) 500 / portTICK_PERIOD_MS  )
+
+static volatile ShifterPosition currentShifterPosition = POS_1;
 static volatile uint32_t dataReadsSinceLastCheck = 0; // Used for detecting stalls
 
 static void vLDCMonit( void *pvParameters );
-static LDC_Channel_Data vLDCMonit_ReadLDCData( void );
-static ShifterPosition vLDCMonit_ProcessLDCData( LDC_Channel_Data data );
 
 /*-----------------------------------------------------------*/
 
@@ -37,39 +38,37 @@ static void vLDCMonit( void *pvParameters ) {
 	( void ) pvParameters;
 
     /* Wait for the LDC's to data to stablize */
-    // TODO
+    vTaskDelay( LDC_MONITOR_INITIAL_WAIT );
 
 	/* Cycle for ever, delaying monitoring cycle to a set rate. */
 	for( ;; ) {
-		/* Read the LDC's to data */
-        LDC_Channel_Data data = vLDCMonit_ReadLDCData();
+        uint32_t data[8];
+        
+        // Zero out data to start
+        for(int i=0; i<8; i++) { data[i] = 0; }
 
         /* Recalculate current shifter postion */
-        currentShifterPosition = vLDCMonit_ProcessLDCData(data);
+        data[0] = vLdcSensorReadChannel(LDC_1_Addr, 0);
+        data[2] = vLdcSensorReadChannel(LDC_1_Addr, 1);
+        //data[4] = vLdcSensorReadChannel(LDC_1_Addr, 2); // Disabled due to hardware issue
+        data[6] = vLdcSensorReadChannel(LDC_1_Addr, 3);
+
+        int maxIndex = -1;
+        uint32_t maxValue = 0;
+        for(int i=0; i<8; i++) {
+            // Mask out the error status bits (first 4 bits)
+            data[i] &= ~(0xF0000000);
+            if(data[i] > maxValue) {
+                maxIndex = i;
+                maxValue = data[i];
+            }
+        }
+        currentShifterPosition = maxIndex;
 
         dataReadsSinceLastCheck++; // TODO: this should happen if valid data from LDC
 
         vTaskDelay( LDC_MONITOR_PERIOD );
 	}
-}
-/*-----------------------------------------------------------*/
-
-static LDC_Channel_Data vLDCMonit_ReadLDCData( void ) {
-    LDC_Channel_Data result;
-
-    // TODO
-    // Zero out for now
-    for(int i=0; i<8; i++) {
-        result.data[i]=0;
-    }
-
-    return result;
-}
-/*-----------------------------------------------------------*/
-
-static ShifterPosition vLDCMonit_ProcessLDCData( LDC_Channel_Data data ){
-    // TODO
-    return POS_UNKNOWN;
 }
 /*-----------------------------------------------------------*/
 

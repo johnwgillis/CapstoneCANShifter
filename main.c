@@ -64,6 +64,9 @@ void printCurrentShifterPosition( void );
 void printLDC1Register( char* registerName, uint8_t registerAddress );
 void printLDC1FullDebug( void );
 
+struct hexString { char str[11]; };
+struct hexString numberToHexString(uint32_t num);
+
 /*-----------------------------------------------------------*/
 
 int main( void ) {
@@ -119,8 +122,9 @@ static void prvCheckOtherTasksAreStillRunning( void ) {
 		vLedHelperToggleLED( mainCHECK_TASK_LED );
 	}
 
-	printCurrentShifterPosition();
+	serial_transmit_string("\n\n\0");
 	printLDC1FullDebug();
+	printCurrentShifterPosition();
 }
 /*-----------------------------------------------------------*/
 
@@ -172,10 +176,7 @@ void printLDC1Register( char* registerName, uint8_t registerAddress ) {
 
 	// Print reg value
 	uint16_t ldcRegVal = vLdcSensorReadRegister(LDC_1_Addr, registerAddress);
-	char ldcString[17];
-	ldcString[16] = '\0';
-	for (int i = 15; i >= 0; i--, ldcRegVal>>=1) { ldcString[i] = (ldcRegVal & 1) + '0'; }
-	serial_transmit_string(ldcString);
+	serial_transmit_string(numberToHexString(ldcRegVal).str);
 	serial_transmit_string("\n\0");
 }
 /*-----------------------------------------------------------*/
@@ -183,40 +184,27 @@ void printLDC1Register( char* registerName, uint8_t registerAddress ) {
 // To debug LDC 1
 void printLDC1FullDebug( void ) {
 	// Read the LDC 1 Channel 0
-	serial_transmit_string("\n\nLDC 1 Channel 0 Data: \0");
+	serial_transmit_string("LDC 1 Channel 0 Data: \0");
 	uint32_t ldcData = vLdcSensorReadChannel(LDC_1_Addr, 0);
-	// Prints the channel data
-	char ldcDataString[33];
-	ldcDataString[32] = '\0';
-	for (int i = 31; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
-	serial_transmit_string(ldcDataString);
+	serial_transmit_string(numberToHexString(ldcData).str);
 	serial_transmit_string("\n\0");
 
 	// Read the LDC 1 Channel 1
 	serial_transmit_string("LDC 1 Channel 1 Data: \0");
 	ldcData = vLdcSensorReadChannel(LDC_1_Addr, 1);
-	// Prints the channel data
-	ldcDataString[32] = '\0';
-	for (int i = 31; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
-	serial_transmit_string(ldcDataString);
+	serial_transmit_string(numberToHexString(ldcData).str);
 	serial_transmit_string("\n\0");
 
 	// Read the LDC 1 Channel 2
 	serial_transmit_string("LDC 1 Channel 2 Data: \0");
 	ldcData = vLdcSensorReadChannel(LDC_1_Addr, 2);
-	// Prints the channel data
-	ldcDataString[32] = '\0';
-	for (int i = 31; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
-	serial_transmit_string(ldcDataString);
+	serial_transmit_string(numberToHexString(ldcData).str);
 	serial_transmit_string("\n\0");
 
 	// Read the LDC 1 Channel 3
 	serial_transmit_string("LDC 1 Channel 3 Data: \0");
 	ldcData = vLdcSensorReadChannel(LDC_1_Addr, 3);
-	// Prints the channel data
-	ldcDataString[32] = '\0';
-	for (int i = 31; i >= 0; i--, ldcData>>=1) { ldcDataString[i] = (ldcData & 1) + '0'; }
-	serial_transmit_string(ldcDataString);
+	serial_transmit_string(numberToHexString(ldcData).str);
 	serial_transmit_string("\n\0");
 
 	// Print register(s) to debug
@@ -224,4 +212,24 @@ void printLDC1FullDebug( void ) {
 	printLDC1Register("Status\0", 0x18); // Status
 	printLDC1Register("Config\0", 0x1A); // Config
 	printLDC1Register("ERROR_CONFIG\0", 0x19); // ERROR_CONFIG
+}
+/*-----------------------------------------------------------*/
+
+#define TO_HEX(i) (i <= 9 ? '0' + i : 'A' - 10 + i)
+struct hexString numberToHexString(uint32_t num) {
+	struct hexString result;
+	result.str[10] = '\0';
+	result.str[0] = '0';
+	result.str[1] = 'x';
+
+	result.str[2] = TO_HEX(((num & 0xF0000000) >>28));
+	result.str[3] = TO_HEX(((num & 0xF000000) >>24));
+	result.str[4] = TO_HEX(((num & 0xF00000) >>20));
+	result.str[5] = TO_HEX(((num & 0xF0000) >>16));
+	result.str[6] = TO_HEX(((num & 0xF000) >>12));
+	result.str[7] = TO_HEX(((num & 0xF00) >>8));
+	result.str[8] = TO_HEX(((num & 0xF0) >>4));
+	result.str[9] = TO_HEX(((num & 0xF)));
+
+	return result;
 }

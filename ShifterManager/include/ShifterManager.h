@@ -9,10 +9,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-typedef struct LDC_Channel_Data {
-    uint32_t data[8];
-} LDC_Channel_Data;
-typedef enum ShifterPosition{POS_1, POS_2, POS_3, POS_4, POS_5, POS_6, POS_7, POS_UNKNOWN} ShifterPosition;
+typedef enum ShifterPosition{POS_1=0, POS_2=1, POS_3=2, POS_4=3, POS_5=4, POS_6=5, POS_7=6, POS_UNKNOWN=-1} ShifterPosition;
 
 void vShifterManagerStartTasks( UBaseType_t uxPriority );
 
