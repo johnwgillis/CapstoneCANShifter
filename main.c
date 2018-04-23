@@ -46,6 +46,9 @@ again. */
 /* The period between executions of the check task. */
 #define mainCHECK_PERIOD				( ( TickType_t ) 3000 / portTICK_PERIOD_MS  )
 
+/* The period between changes in the LED tester task. */
+#define mainTEST_LED_PERIOD				( ( TickType_t ) 500 / portTICK_PERIOD_MS  )
+
 /*
  * The task function for the "Check" task.
  */
@@ -59,6 +62,8 @@ static void prvCheckOtherTasksAreStillRunning( void );
 
 // Application Idle Hook for FreeRTOS
 void vApplicationIdleHook( void );
+
+static void vTestLEDs( void *pvParameters );
 
 void printCurrentShifterPosition( void );
 void printLDC1Register( char* registerName, uint8_t registerAddress );
@@ -86,12 +91,85 @@ int main( void ) {
 	unsigned short additionalStackSize = 128; // Since printing a lot (temp until full calculation of bytes used)
 	xTaskCreate( vErrorChecks, "Check", configMINIMAL_STACK_SIZE+additionalStackSize, NULL, mainCHECK_TASK_PRIORITY, NULL );
 
+	/* Create the LED Tester. */
+	xTaskCreate( vTestLEDs, "TestLeds", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY, NULL );
+
 	/* In this port, to use preemptive scheduler define configUSE_PREEMPTION
 	as 1 in portmacro.h.  To use the cooperative scheduler define
 	configUSE_PREEMPTION as 0. */
 	vTaskStartScheduler();
 
 	return 0;
+}
+/*-----------------------------------------------------------*/
+
+static void vTestLEDs( void *pvParameters ) {
+	/* The parameters are not used. */
+	( void ) pvParameters;
+
+	// Setup and turn on all LEDs
+	DDRD |= (1 << 0); // PD.0
+	DDRC |= (1 << 7); // PC.7
+	DDRB |= (1 << 5); // PB.5
+	DDRB |= (1 << 6); // PB.6
+	DDRB |= (1 << 7); // PB.7
+
+	PORTD |= (1 << 0); // PD.0
+	PORTC |= (1 << 7); // PC.7
+	PORTB |= (1 << 5); // PB.5
+	PORTB |= (1 << 6); // PB.6
+	PORTC |= (1 << 7); // PB.7
+
+
+	// Continually blink LEDs in order
+	for( ;; ) {
+
+		// Turn on LED 1
+		PORTD |= (1 << 0); // PD.0
+		// Wait for a bit
+		vTaskDelay( mainTEST_LED_PERIOD );
+		// Turn off LED 1
+		PORTD &= ~(1 << 0); // PD.0
+		// Wait for a bit
+		vTaskDelay( mainTEST_LED_PERIOD );
+
+		// Turn on LED 2
+		PORTC |= (1 << 7); // PC.7
+		// Wait for a bit
+		vTaskDelay( mainTEST_LED_PERIOD );
+		// Turn off LED 2
+		PORTC &= ~(1 << 7); // PC.7
+		// Wait for a bit
+		vTaskDelay( mainTEST_LED_PERIOD );
+
+		// Turn on LED 3
+		PORTB |= (1 << 5); // PB.5
+		// Wait for a bit
+		vTaskDelay( mainTEST_LED_PERIOD );
+		// Turn off LED 3
+		PORTB &= ~(1 << 5); // PB.5
+		// Wait for a bit
+		vTaskDelay( mainTEST_LED_PERIOD );
+
+		// Turn on LED 4
+		PORTB |= (1 << 6); // PB.6
+		// Wait for a bit
+		vTaskDelay( mainTEST_LED_PERIOD );
+		// Turn off LED 4
+		PORTB &= ~(1 << 6); // PB.6
+		// Wait for a bit
+		vTaskDelay( mainTEST_LED_PERIOD );
+
+		// Turn on LED 5
+		PORTC |= (1 << 7); // PB.7
+		// Wait for a bit
+		vTaskDelay( mainTEST_LED_PERIOD );
+		// Turn off LED 5
+		PORTC &= ~(1 << 7); // PB.7
+		// Wait for a bit
+		vTaskDelay( mainTEST_LED_PERIOD );
+		
+	}
 }
 /*-----------------------------------------------------------*/
 
