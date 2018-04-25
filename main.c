@@ -11,6 +11,8 @@
 #endif
 #include <util/delay.h>
 
+// Configure Output Mode for Pin PD.3
+#define OUTPUT_MODE_SERIAL_NOT_PWM 1
 
 #include <stdlib.h>
 #include <string.h>

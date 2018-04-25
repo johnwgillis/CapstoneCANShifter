@@ -10,6 +10,10 @@
 #include "serial.h"
 #include "LdcSensor.h"
 
+#ifndef OUTPUT_MODE_SERIAL_NOT_PWM
+#define OUTPUT_MODE_SERIAL_NOT_PWM 1	// Default value: 1 (should be configured in main)
+#endif
+
 /* The stack size used for the LDC Monitor task. */
 #define LDC_MONITOR_STACK_SIZE          1024
 /* The period between executions of the LDC Monitor task. */
@@ -34,8 +38,8 @@ uint32_t configPositionLower[8] = {     1200,   1500,   1800,   2100,   2400,   
 
 /* Output Config */
 //                          POS:   1          2          3          4          5          6          7          8          Unknown
-uint8_t configPWM[9]           = { 0,         0,         0,         0,         0,         0,         0,         0,         0           }; // from 0 to 255
-uint8_t configInterlocks[9][4] = { {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}   }; // 0 or 1
+uint8_t configPWM[9]           = { 75,        100,       125,       150,       175,       200,       225,       250,       10          }; // from 0 to 255
+uint8_t configInterlocks[9][4] = { {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,0}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,0,0,0}, {1,0,0,1}   }; // 0 or 1
 uint8_t configCANAddress = 0x00;
 char configCANMessages[9][MAX_CAN_MESSAGE_LENGTH] = {
     "Position_1", // POS: 1
@@ -132,7 +136,7 @@ static void vLDCMonit( void *pvParameters ) {
 
 void vShifterManagerInitOutput( void ) {
 
-    // Init Interlocks
+    // Init Interlocks with all off
     unsigned char ucBit = 1;
     for(int i=0; i<4; i++) {
         ucBit = (1 << interlockBit[i]);
@@ -140,17 +144,27 @@ void vShifterManagerInitOutput( void ) {
         *(interlockPORT[i]) &= ~ucBit;
     }
 
+    // Init PWM by setting up intial timer with Position Unknown
+    // Uses PD.3 for Timer 0 A (which is shared with UART Tx)
+#if OUTPUT_MODE_SERIAL_NOT_PWM == 0
+    DDRD |= (1 << 3); // Set PD.3 to output
+    TCCR0A  = ((1 << COM1A1) | (1 << COM1A0)); // Set OC0A on compare match, clear OC0A at TOP
+    TCCR0B = (1 << WGM00) | (1 << WGM01) | (1 << CS00) | (1 << CS02); // Fast PWM with 1/1024 prescaler
+#endif
+
     return;
 }
 /*-----------------------------------------------------------*/
 
 void vShifterManagerOutputPosition(ShifterPosition position) {
 
-    outputSerial(position);
-
     outputCAN(position);
 
+#if OUTPUT_MODE_SERIAL_NOT_PWM
+    outputSerial(position);
+#else
     outputPWM(position);
+#endif
 
     outputInterlocks(position);
 
@@ -220,21 +234,19 @@ void outputCAN(ShifterPosition currentPosition) {
 /*-----------------------------------------------------------*/
 
 void outputPWM(ShifterPosition currentPosition) {
-    // TODO
+#if OUTPUT_MODE_SERIAL_NOT_PWM == 0
+    OCR0B = configPWM[currentPosition]; // Set the PWM duty
+#endif
     return;
 }
 /*-----------------------------------------------------------*/
 
 void outputInterlocks(ShifterPosition currentPosition) {
-    uint8_t configPositionIndex = currentPosition;
-    if(currentPosition == POS_UNKNOWN) {
-        configPositionIndex = 8;
-    }
     unsigned char ucBit = 1;
     for(int i=0; i<4; i++) {
         ucBit = (1 << interlockBit[i]);
         *(interlockDDR[i]) |= ucBit;
-        if(configInterlocks[configPositionIndex][i]) {
+        if(configInterlocks[currentPosition][i]) {
             *(interlockPORT[i]) |= ucBit;
         } else {
             *(interlockPORT[i]) &= ~ucBit;
