@@ -33,8 +33,8 @@ volatile uint8_t* interlockPORT[5] = {	&PORTD, &PORTB, &PORTC, &PORTC  };
 
 /* Input Config */
 //                          POS:        1       2       3       4       5       6       7       8
-uint32_t configPositionUpper[8] = {     1000,   1300,   1600,   1900,   2200,   2500,   2800,   3100    };
-uint32_t configPositionLower[8] = {     1200,   1500,   1800,   2100,   2400,   2700,   3000,   3300    };
+uint32_t configPositionUpper[8] = {     927000, 918700, 891400, 884300, 886150, 886500, 20,     40    }; // Position 7 and 8 aren't used
+uint32_t configPositionLower[8] = {     926600, 918300, 891000, 883900, 885800, 886200, 10,     30    }; // Position 7 and 8 aren't used
 
 /* Output Config */
 //                          POS:   1          2          3          4          5          6          7          8          Unknown
