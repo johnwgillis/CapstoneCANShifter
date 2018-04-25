@@ -189,23 +189,23 @@ void printLDC1FullDebug( void ) {
 	serial_transmit_string(numberToHexString(ldcData).str);
 	serial_transmit_string("\n\0");
 
-	// Read the LDC 1 Channel 1
-	serial_transmit_string("LDC 1 Channel 1 Data: \0");
-	ldcData = vLdcSensorReadChannel(LDC_1_Addr, 1);
-	serial_transmit_string(numberToHexString(ldcData).str);
-	serial_transmit_string("\n\0");
+	// // Read the LDC 1 Channel 1
+	// serial_transmit_string("LDC 1 Channel 1 Data: \0");
+	// ldcData = vLdcSensorReadChannel(LDC_1_Addr, 1);
+	// serial_transmit_string(numberToHexString(ldcData).str);
+	// serial_transmit_string("\n\0");
 
-	// Read the LDC 1 Channel 2
-	serial_transmit_string("LDC 1 Channel 2 Data: \0");
-	ldcData = vLdcSensorReadChannel(LDC_1_Addr, 2);
-	serial_transmit_string(numberToHexString(ldcData).str);
-	serial_transmit_string("\n\0");
+	// // Read the LDC 1 Channel 2
+	// serial_transmit_string("LDC 1 Channel 2 Data: \0");
+	// ldcData = vLdcSensorReadChannel(LDC_1_Addr, 2);
+	// serial_transmit_string(numberToHexString(ldcData).str);
+	// serial_transmit_string("\n\0");
 
-	// Read the LDC 1 Channel 3
-	serial_transmit_string("LDC 1 Channel 3 Data: \0");
-	ldcData = vLdcSensorReadChannel(LDC_1_Addr, 3);
-	serial_transmit_string(numberToHexString(ldcData).str);
-	serial_transmit_string("\n\0");
+	// // Read the LDC 1 Channel 3
+	// serial_transmit_string("LDC 1 Channel 3 Data: \0");
+	// ldcData = vLdcSensorReadChannel(LDC_1_Addr, 3);
+	// serial_transmit_string(numberToHexString(ldcData).str);
+	// serial_transmit_string("\n\0");
 
 	// Print register(s) to debug
 	printLDC1Register("Device Id\0", 0x7F); // Device Id

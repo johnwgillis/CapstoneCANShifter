@@ -10,34 +10,39 @@
  * Simple parallel port IO routines.
  *-----------------------------------------------------------*/
 
-#define partstMAX_OUTPUT_LED			( ( unsigned char ) 7 )
+#define MAX_OUTPUT_LED_NUM			( ( unsigned char ) 4 )
 
-#define DDR DDRC
-#define PORT PORTC
+// 						LED #:		0		1		2		3		4
+// 						Pin:		PD.0	PC.7	PB.5	PB.6	PB.7
+volatile uint8_t* ledDDR[5]  = {	&DDRD, 	&DDRC, 	&DDRB, 	&DDRB, 	&DDRB	};
+volatile uint8_t* ledPORT[5] = {	&PORTD, &PORTC, &PORTB, &PORTB, &PORTB	};
+		 uint8_t  ledBit[5]  = {	0, 		7, 		5, 		6, 		7		};
 
 /*-----------------------------------------------------------*/
 
 void vLedHelperInitialiseLED( unsigned portBASE_TYPE uxLED ) {
-	/* Set port B direction to output.  Start with output off. */
-	unsigned char ucBit = ( unsigned char ) 1;
-	ucBit <<= uxLED;
-	DDR |= ucBit;
-	PORT |= ucBit;
+	if( uxLED <= MAX_OUTPUT_LED_NUM ) {
+		/* Set port direction to output.  Start with output off. */
+		unsigned char ucBit = ( unsigned char ) 1;
+		ucBit <<= ledBit[uxLED];
+		*(ledDDR[uxLED]) |= ucBit;
+		*(ledPORT[uxLED]) &= ~ucBit;
+	}
 }
 /*-----------------------------------------------------------*/
 
 void vLedHelperSetLED( unsigned portBASE_TYPE uxLED, signed portBASE_TYPE xValue ) {
 	unsigned char ucBit = ( unsigned char ) 1;
 
-	if( uxLED <= partstMAX_OUTPUT_LED ) {
-		ucBit <<= uxLED;	
+	if( uxLED <= MAX_OUTPUT_LED_NUM ) {
+		ucBit <<= ledBit[uxLED];	
 
 		vTaskSuspendAll();
 		{
 			if( xValue == pdTRUE ) {
-				PORT |= ucBit;
+				*(ledPORT[uxLED]) &= ~ucBit;
 			} else {
-				PORT &= ~ucBit;
+				*(ledPORT[uxLED]) |= ucBit;
 			}
 		}
 		xTaskResumeAll();
@@ -48,15 +53,15 @@ void vLedHelperSetLED( unsigned portBASE_TYPE uxLED, signed portBASE_TYPE xValue
 void vLedHelperToggleLED( unsigned portBASE_TYPE uxLED ) {
 	unsigned char ucBit;
 
-	if( uxLED <= partstMAX_OUTPUT_LED ) {
-		ucBit = ( ( unsigned char ) 1 ) << uxLED;
+	if( uxLED <= MAX_OUTPUT_LED_NUM ) {
+		ucBit = ( ( unsigned char ) 1 ) << ledBit[uxLED];
 
 		vTaskSuspendAll();
 		{
-			if( PORT & ucBit ) {
-				PORT &= ~ucBit;
+			if( *(ledPORT[uxLED]) & ucBit ) {
+				*(ledPORT[uxLED]) &= ~ucBit;
 			} else {
-				PORT |= ucBit;
+				*(ledPORT[uxLED]) |= ucBit;
 			}
 		}
 		xTaskResumeAll();			
