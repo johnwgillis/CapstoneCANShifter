@@ -17,6 +17,11 @@
 /* The initial wait after configuring the LDCs to allow them to stablize. */
 #define LDC_MONITOR_INITIAL_WAIT		( ( TickType_t ) 500 / portTICK_PERIOD_MS  )
 
+//                          POS:        1       2       3       4       5       6       7       8
+uint32_t configPositionUpper[8] = {     1000,   1300,   1600,   1900,   2200,   2500,   2800,   3100    };
+uint32_t configPositionLower[8] = {     1200,   1500,   1800,   2100,   2400,   2700,   3000,   3300    };
+
+
 static volatile ShifterPosition currentShifterPosition = POS_1;
 static volatile uint32_t dataReadsSinceLastCheck = 0; // Used for detecting stalls
 
@@ -49,21 +54,29 @@ static void vLDCMonit( void *pvParameters ) {
 
         /* Recalculate current shifter postion */
         data[0] = vLdcSensorReadChannel(LDC_1_Addr, 0);
-        data[2] = vLdcSensorReadChannel(LDC_1_Addr, 1);
-        //data[4] = vLdcSensorReadChannel(LDC_1_Addr, 2); // Disabled due to hardware issue
-        data[6] = vLdcSensorReadChannel(LDC_1_Addr, 3);
+        // data[2] = vLdcSensorReadChannel(LDC_1_Addr, 1);
+        // data[4] = vLdcSensorReadChannel(LDC_1_Addr, 2);
+        // data[6] = vLdcSensorReadChannel(LDC_1_Addr, 3);
 
-        int maxIndex = -1;
-        uint32_t maxValue = 0;
-        for(int i=0; i<8; i++) {
-            // Mask out the error status bits (first 4 bits)
-            data[i] &= ~(0xF0000000);
-            if(data[i] > maxValue) {
-                maxIndex = i;
-                maxValue = data[i];
+        // Old method: Sort to find max LDC value
+        // int maxIndex = -1;
+        // uint32_t maxValue = 0;
+        // for(int i=0; i<8; i++) {
+        //     // Mask out the error status bits (first 4 bits)
+        //     data[i] &= ~(0xF0000000);
+        //     if(data[i] > maxValue) {
+        //         maxIndex = i;
+        //         maxValue = data[i];
+        //     }
+        // }
+        // currentShifterPosition = maxIndex;
+
+        currentShifterPosition = POS_UNKNOWN;
+        for(int i=0; i<8 && currentShifterPosition==POS_UNKNOWN; i++) {
+            if( data[0] >= configPositionLower[i] && data[0] <= configPositionUpper[i] ) {
+                currentShifterPosition = i;
             }
         }
-        currentShifterPosition = maxIndex;
 
         dataReadsSinceLastCheck++; // TODO: this should happen if valid data from LDC
 

@@ -77,12 +77,11 @@ void vLdcSensorInitialiseConfig( uint8_t deviceAddress );
 
 void vLdcSensorInitialise( void ) {
     /* Setup I2C interface */
-	softwareWire_init(3, 4); // SDA = PortD.3  and  SCL = PortD.4
+	softwareWire_init(3, 4); // SDA = PortB.3  and  SCL = PortB.4
 	begin();
 
     // Config the LDC's correctly
     vLdcSensorInitialiseConfig(LDC_1_Addr);
-    //vLdcSensorInitialiseConfig(LDC_2_Addr); // Disabled due to hardware issue
 }
 /*-----------------------------------------------------------*/
 
