@@ -17,4 +17,7 @@ ShifterPosition vShifterManagerGetCurrentPosition(void);
 
 BaseType_t xAreShifterManagerTasksStillRunning( void );
 
+struct hexString { char str[11]; };
+struct hexString numberToHexString(uint32_t num);
+
 #endif

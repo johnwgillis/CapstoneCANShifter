@@ -64,9 +64,6 @@ void printCurrentShifterPosition( void );
 void printLDC1Register( char* registerName, uint8_t registerAddress );
 void printLDC1FullDebug( void );
 
-struct hexString { char str[11]; };
-struct hexString numberToHexString(uint32_t num);
-
 /*-----------------------------------------------------------*/
 
 int main( void ) {
@@ -214,22 +211,3 @@ void printLDC1FullDebug( void ) {
 	printLDC1Register("ERROR_CONFIG\0", 0x19); // ERROR_CONFIG
 }
 /*-----------------------------------------------------------*/
-
-#define TO_HEX(i) (i <= 9 ? '0' + i : 'A' - 10 + i)
-struct hexString numberToHexString(uint32_t num) {
-	struct hexString result;
-	result.str[10] = '\0';
-	result.str[0] = '0';
-	result.str[1] = 'x';
-
-	result.str[2] = TO_HEX(((num & 0xF0000000) >>28));
-	result.str[3] = TO_HEX(((num & 0xF000000) >>24));
-	result.str[4] = TO_HEX(((num & 0xF00000) >>20));
-	result.str[5] = TO_HEX(((num & 0xF0000) >>16));
-	result.str[6] = TO_HEX(((num & 0xF000) >>12));
-	result.str[7] = TO_HEX(((num & 0xF00) >>8));
-	result.str[8] = TO_HEX(((num & 0xF0) >>4));
-	result.str[9] = TO_HEX(((num & 0xF)));
-
-	return result;
-}

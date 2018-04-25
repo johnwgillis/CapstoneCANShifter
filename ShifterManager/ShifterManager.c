@@ -7,13 +7,13 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "serial.h"
 #include "LdcSensor.h"
 
 /* The stack size used for the LDC Monitor task. */
 #define LDC_MONITOR_STACK_SIZE          1024
 /* The period between executions of the LDC Monitor task. */
 #define LDC_MONITOR_PERIOD				( ( TickType_t ) 100 / portTICK_PERIOD_MS  )
-
 /* The initial wait after configuring the LDCs to allow them to stablize. */
 #define LDC_MONITOR_INITIAL_WAIT		( ( TickType_t ) 500 / portTICK_PERIOD_MS  )
 
@@ -22,10 +22,17 @@ uint32_t configPositionUpper[8] = {     1000,   1300,   1600,   1900,   2200,   
 uint32_t configPositionLower[8] = {     1200,   1500,   1800,   2100,   2400,   2700,   3000,   3300    };
 
 
-static volatile ShifterPosition currentShifterPosition = POS_1;
+static volatile ShifterPosition currentShifterPosition = POS_UNKNOWN;
+static volatile ShifterPosition lastShifterPosition = POS_UNKNOWN;
 static volatile uint32_t dataReadsSinceLastCheck = 0; // Used for detecting stalls
 
 static void vLDCMonit( void *pvParameters );
+void vShifterManagerOutputPosition(ShifterPosition position);
+
+void outputSerial(ShifterPosition currentPosition);
+void outputCAN(ShifterPosition currentPosition);
+void outputPWM(ShifterPosition currentPosition);
+void outputInterlocks(ShifterPosition currentPosition);
 
 /*-----------------------------------------------------------*/
 
@@ -78,10 +85,29 @@ static void vLDCMonit( void *pvParameters ) {
             }
         }
 
+        if( lastShifterPosition != currentShifterPosition ) {
+            vShifterManagerOutputPosition(currentShifterPosition);
+            lastShifterPosition = currentShifterPosition;
+        }
+
         dataReadsSinceLastCheck++; // TODO: this should happen if valid data from LDC
 
         vTaskDelay( LDC_MONITOR_PERIOD );
 	}
+}
+/*-----------------------------------------------------------*/
+
+void vShifterManagerOutputPosition(ShifterPosition position) {
+
+    outputSerial(position);
+
+    outputCAN(position);
+
+    outputPWM(position);
+
+    outputInterlocks(position);
+
+    return;
 }
 /*-----------------------------------------------------------*/
 
@@ -102,4 +128,74 @@ BaseType_t xAreShifterManagerTasksStillRunning( void ) {
 	dataReadsSinceLastCheck = 0;
 
 	return xReturn;
+}
+/*-----------------------------------------------------------*/
+
+void outputSerial(ShifterPosition currentPosition) {
+	serial_transmit_string("Shifter Position Changed To: \0");
+	switch(currentPosition) {
+		case POS_1:
+			serial_transmit_string("1\n\0");
+			break;
+		case POS_2:
+			serial_transmit_string("2\n\0");
+			break;
+		case POS_3:
+			serial_transmit_string("3\n\0");
+			break;
+		case POS_4:
+			serial_transmit_string("4\n\0");
+			break;
+		case POS_5:
+			serial_transmit_string("5\n\0");
+			break;
+		case POS_6:
+			serial_transmit_string("6\n\0");
+			break;
+		case POS_7:
+			serial_transmit_string("7\n\0");
+			break;
+		case POS_UNKNOWN:
+		default:
+			serial_transmit_string("Unknown\n\0");
+			break;
+	}
+}
+/*-----------------------------------------------------------*/
+
+void outputCAN(ShifterPosition currentPosition) {
+    // TODO
+    return;
+}
+/*-----------------------------------------------------------*/
+
+void outputPWM(ShifterPosition currentPosition) {
+    // TODO
+    return;
+}
+/*-----------------------------------------------------------*/
+
+void outputInterlocks(ShifterPosition currentPosition) {
+    // TODO
+    return;
+}
+/*-----------------------------------------------------------*/
+
+#define TO_HEX(i) (i <= 9 ? '0' + i : 'A' - 10 + i)
+struct hexString numberToHexString(uint32_t num) {
+	struct hexString result;
+	result.str[10] = '\0';
+	result.str[0] = '0';
+	result.str[1] = 'x';
+
+	result.str[2] = TO_HEX(((num & 0xF0000000) >>28));
+	result.str[3] = TO_HEX(((num & 0xF000000) >>24));
+	result.str[4] = TO_HEX(((num & 0xF00000) >>20));
+	result.str[5] = TO_HEX(((num & 0xF0000) >>16));
+	result.str[6] = TO_HEX(((num & 0xF000) >>12));
+	result.str[7] = TO_HEX(((num & 0xF00) >>8));
+	result.str[8] = TO_HEX(((num & 0xF0) >>4));
+	result.str[9] = TO_HEX(((num & 0xF)));
+
+	return result;
 }
