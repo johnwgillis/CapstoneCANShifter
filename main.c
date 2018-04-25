@@ -155,6 +155,9 @@ void printCurrentShifterPosition( void ) {
 		case POS_7:
 			serial_transmit_string("7\n\0");
 			break;
+		case POS_8:
+			serial_transmit_string("8\n\0");
+			break;
 		case POS_UNKNOWN:
 		default:
 			serial_transmit_string("Unknown\n\0");

@@ -17,9 +17,37 @@
 /* The initial wait after configuring the LDCs to allow them to stablize. */
 #define LDC_MONITOR_INITIAL_WAIT		( ( TickType_t ) 500 / portTICK_PERIOD_MS  )
 
+#define MAX_CAN_MESSAGE_LENGTH 200
+
+/* Hardware Config */
+// 					Interlock #:	    1		2		3		4
+// 					Pin:		        PD.7	PB.2	PC.4	PC.5
+volatile uint8_t* interlockDDR[5]  = {	&DDRD, 	&DDRB, 	&DDRC, 	&DDRC   };
+volatile uint8_t* interlockPORT[5] = {	&PORTD, &PORTB, &PORTC, &PORTC  };
+		 uint8_t  interlockBit[5]  = {	7, 		2, 		4, 		5       };
+
+
+/* Input Config */
 //                          POS:        1       2       3       4       5       6       7       8
 uint32_t configPositionUpper[8] = {     1000,   1300,   1600,   1900,   2200,   2500,   2800,   3100    };
 uint32_t configPositionLower[8] = {     1200,   1500,   1800,   2100,   2400,   2700,   3000,   3300    };
+
+/* Output Config */
+//                          POS:   1          2          3          4          5          6          7          8          Unknown
+uint8_t configPWM[9]           = { 0,         0,         0,         0,         0,         0,         0,         0,         0           }; // from 0 to 255
+uint8_t configInterlocks[9][4] = { {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}   }; // 0 or 1
+uint8_t configCANAddress = 0x00;
+char configCANMessages[9][MAX_CAN_MESSAGE_LENGTH] = {
+    "Position_1", // POS: 1
+    "Position_2", // POS: 2
+    "Position_3", // POS: 3
+    "Position_4", // POS: 4
+    "Position_5", // POS: 5
+    "Position_6", // POS: 6
+    "Position_7", // POS: 7
+    "Position_8", // POS: 8
+    "Position_Unknown" // POS: Unknown
+};
 
 
 static volatile ShifterPosition currentShifterPosition = POS_UNKNOWN;
@@ -27,6 +55,8 @@ static volatile ShifterPosition lastShifterPosition = POS_UNKNOWN;
 static volatile uint32_t dataReadsSinceLastCheck = 0; // Used for detecting stalls
 
 static void vLDCMonit( void *pvParameters );
+
+void vShifterManagerInitOutput( void );
 void vShifterManagerOutputPosition(ShifterPosition position);
 
 void outputSerial(ShifterPosition currentPosition);
@@ -39,6 +69,9 @@ void outputInterlocks(ShifterPosition currentPosition);
 void vShifterManagerStartTasks( UBaseType_t uxPriority ) {
 	/* Initialise the LDC's config */
     vLdcSensorInitialise();
+
+    /* Initialise the outputs */
+    vShifterManagerInitOutput();
 
     /* Start monitoring task */
     xTaskCreate( vLDCMonit, "LDC_MONIT", LDC_MONITOR_STACK_SIZE, NULL, uxPriority, ( TaskHandle_t * ) NULL );
@@ -94,6 +127,20 @@ static void vLDCMonit( void *pvParameters ) {
 
         vTaskDelay( LDC_MONITOR_PERIOD );
 	}
+}
+/*-----------------------------------------------------------*/
+
+void vShifterManagerInitOutput( void ) {
+
+    // Init Interlocks
+    unsigned char ucBit = 1;
+    for(int i=0; i<4; i++) {
+        ucBit = (1 << interlockBit[i]);
+        *(interlockDDR[i]) |= ucBit;
+        *(interlockPORT[i]) &= ~ucBit;
+    }
+
+    return;
 }
 /*-----------------------------------------------------------*/
 
@@ -155,6 +202,9 @@ void outputSerial(ShifterPosition currentPosition) {
 		case POS_7:
 			serial_transmit_string("7\n\0");
 			break;
+        case POS_8:
+			serial_transmit_string("8\n\0");
+			break;
 		case POS_UNKNOWN:
 		default:
 			serial_transmit_string("Unknown\n\0");
@@ -176,7 +226,20 @@ void outputPWM(ShifterPosition currentPosition) {
 /*-----------------------------------------------------------*/
 
 void outputInterlocks(ShifterPosition currentPosition) {
-    // TODO
+    uint8_t configPositionIndex = currentPosition;
+    if(currentPosition == POS_UNKNOWN) {
+        configPositionIndex = 8;
+    }
+    unsigned char ucBit = 1;
+    for(int i=0; i<4; i++) {
+        ucBit = (1 << interlockBit[i]);
+        *(interlockDDR[i]) |= ucBit;
+        if(configInterlocks[configPositionIndex][i]) {
+            *(interlockPORT[i]) |= ucBit;
+        } else {
+            *(interlockPORT[i]) &= ~ucBit;
+        }
+    }
     return;
 }
 /*-----------------------------------------------------------*/

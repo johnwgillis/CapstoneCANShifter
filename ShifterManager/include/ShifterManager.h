@@ -9,7 +9,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-typedef enum ShifterPosition{POS_1=0, POS_2=1, POS_3=2, POS_4=3, POS_5=4, POS_6=5, POS_7=6, POS_UNKNOWN=-1} ShifterPosition;
+typedef enum ShifterPosition{POS_1=0, POS_2=1, POS_3=2, POS_4=3, POS_5=4, POS_6=5, POS_7=6, POS_8=7, POS_UNKNOWN=8} ShifterPosition;
 
 void vShifterManagerStartTasks( UBaseType_t uxPriority );
 
