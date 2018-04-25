@@ -14,10 +14,10 @@ void vLdcSensorInitialiseConfig( uint8_t deviceAddress );
 // LDC Register Config
 #define CONFIG_REG 0x1A
 #define CONFIG_VAL_SLEEP 0x3401
-#define CONFIG_VAL_WAKE 0x1401
+#define CONFIG_VAL_WAKE 0x1C01
 
 #define MUX_CONFIG_REG 0x1B
-#define MUX_CONFIG_VAL 0xC209
+#define MUX_CONFIG_VAL 0x020C
 
 #define ERROR_CONFIG_REG 0x19
 #define ERROR_CONFIG_VAL 0x0001
