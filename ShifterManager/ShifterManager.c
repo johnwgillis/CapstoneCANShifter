@@ -98,6 +98,10 @@ static void vLDCMonit( void *pvParameters ) {
 
         /* Recalculate current shifter postion */
         data[0] = vLdcSensorReadChannel(LDC_1_Addr, 0);
+
+        // Mask out the error status bits (first 4 bits)
+        data[0] &= ~(0xF0000000); 
+
         // data[2] = vLdcSensorReadChannel(LDC_1_Addr, 1);
         // data[4] = vLdcSensorReadChannel(LDC_1_Addr, 2);
         // data[6] = vLdcSensorReadChannel(LDC_1_Addr, 3);
@@ -127,7 +131,10 @@ static void vLDCMonit( void *pvParameters ) {
             lastShifterPosition = currentShifterPosition;
         }
 
-        dataReadsSinceLastCheck++; // TODO: this should happen if valid data from LDC
+        // Check for LDC errors
+        if( vLdcSensorGetErrorStaus() == pdFALSE ) {
+            dataReadsSinceLastCheck++; // this should happen if valid data from LDC
+        }
 
         vTaskDelay( LDC_MONITOR_PERIOD );
 	}

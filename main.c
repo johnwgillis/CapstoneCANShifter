@@ -12,7 +12,7 @@
 #include <util/delay.h>
 
 // Configure Output Mode for Pin PD.3
-#define OUTPUT_MODE_SERIAL_NOT_PWM 0
+#define OUTPUT_MODE_SERIAL_NOT_PWM 1
 
 #include <stdlib.h>
 #include <string.h>
@@ -44,7 +44,7 @@ tasks just use the idle priority. */
 that all the other tasks are operating without error.  If no errors are found
 the LED is toggled.  If an error is found at any time the LED is never toggles
 again. */
-#define mainCHECK_TASK_LED				( 5 )
+#define mainCHECK_TASK_LED				( 4 )
 
 /* The Watchdog time period to be used as hardware stall check backup. */
 #define mainCHECK_WATCHDOG				( WDTO_2S  )
@@ -69,7 +69,7 @@ static void prvCheckOtherTasksAreStillRunning( void );
 // Application Idle Hook for FreeRTOS
 void vApplicationIdleHook( void );
 
-void printCurrentShifterPosition( void );
+void printCurrentShifterPositionAndLEDOutput( void );
 void printLDC1Register( char* registerName, uint8_t registerAddress );
 void printLDC1FullDebug( void );
 void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3"))); // To avoid Watchdog reset loop
@@ -81,6 +81,9 @@ static uint32_t repeatedErrorCount = 0; // Used for detecting errors and rebooti
 int main( void ) {
 	/* Setup the LED's for output. */
 	vLedHelperInitialiseLED(mainCHECK_TASK_LED);
+
+	/* Setup the LED's for output of position. */
+	vLedHelperInitialiseLED(0); vLedHelperInitialiseLED(1); vLedHelperInitialiseLED(2); vLedHelperInitialiseLED(3);
 
 	/* Setup UART */
 	serial_init(mainCOM_BAUD_RATE);
@@ -124,13 +127,18 @@ static void vErrorChecks( void *pvParameters ) {
 /*-----------------------------------------------------------*/
 
 static void prvCheckOtherTasksAreStillRunning( void ) {
-	static portBASE_TYPE xErrorHasOccurred = pdFALSE;
+	serial_transmit_string("\n\n\0");
+
+	portBASE_TYPE xErrorHasOccurred = pdFALSE;
 
 	if( xAreShifterManagerTasksStillRunning() != pdTRUE ) {
        xErrorHasOccurred = pdTRUE;
 	}
 
+	serial_transmit_string("Check Status: \0");
 	if( xErrorHasOccurred == pdFALSE ) {
+		serial_transmit_string("Good\n\0");
+
 		/* Toggle the LED if everything is okay so we know if an error occurs even if not
 		using console IO. */
 		vLedHelperToggleLED( mainCHECK_TASK_LED );
@@ -139,6 +147,8 @@ static void prvCheckOtherTasksAreStillRunning( void ) {
 		repeatedErrorCount = 0;
 
 	} else {
+		serial_transmit_string("Stall Error\n\0");
+
 		repeatedErrorCount ++;
 
 		if( repeatedErrorCount >= mainERRORS_TO_REBOOT ) {
@@ -153,9 +163,8 @@ static void prvCheckOtherTasksAreStillRunning( void ) {
 		}
 	}
 
-	serial_transmit_string("\n\n\0");
-	printLDC1FullDebug();
-	printCurrentShifterPosition();
+	//printLDC1FullDebug();
+	printCurrentShifterPositionAndLEDOutput();
 }
 /*-----------------------------------------------------------*/
 
@@ -164,7 +173,7 @@ void vApplicationIdleHook( void ) {
 }
 /*-----------------------------------------------------------*/
 
-void printCurrentShifterPosition( void ) {
+void printCurrentShifterPositionAndLEDOutput( void ) {
 	serial_transmit_string("Current Shifter Position: \0");
 	ShifterPosition currentPosition = vShifterManagerGetCurrentPosition();
 	switch(currentPosition) {
@@ -197,6 +206,14 @@ void printCurrentShifterPosition( void ) {
 			serial_transmit_string("Unknown\n\0");
 			break;
 	}
+
+	// Ouput position as binary number via LEDs
+	uint8_t currentPositionNum = (uint8_t) currentPosition;
+	vLedHelperSetLED( 0, currentPositionNum & 0x1 );
+	vLedHelperSetLED( 1, currentPositionNum & 0x2 );
+	vLedHelperSetLED( 2, currentPositionNum & 0x4 );
+	vLedHelperSetLED( 3, currentPositionNum & 0x8 );
+	
 }
 /*-----------------------------------------------------------*/
 
@@ -243,7 +260,7 @@ void printLDC1FullDebug( void ) {
 
 	// Print register(s) to debug
 	printLDC1Register("Device Id\0", 0x7F); // Device Id
-	printLDC1Register("Status\0", 0x18); // Status
+	//printLDC1Register("Status\0", 0x18); // Status (can't check because already checking in Shifter Manager)
 	printLDC1Register("Config\0", 0x1A); // Config
 	printLDC1Register("ERROR_CONFIG\0", 0x19); // ERROR_CONFIG
 }

@@ -73,6 +73,8 @@ void vLdcSensorInitialiseConfig( uint8_t deviceAddress );
 #define DRIVE_CURRENT3_REG 0x21
 #define DRIVE_CURRENT3_VAL DRIVE_CURRENT0_VAL
 
+static volatile BaseType_t recentReadError = pdFALSE;
+
 /*-----------------------------------------------------------*/
 
 void vLdcSensorInitialise( void ) {
@@ -240,6 +242,16 @@ uint32_t vLdcSensorReadChannel( uint8_t deviceAddress, uint8_t channel ) {
     result |= ( MSB_temp_result << 8);
     result |= ( LSB_temp_result << 0);
 
+    // Check for read errors
+    if(result == 0x0) {
+        // Error when reading via I2C
+        recentReadError = pdTRUE;
+    }
+    if((result & 0xF0000000) >= 1) {
+        // Error from LDC channel
+        recentReadError = pdTRUE;
+    }
+
     return result;
 }
 /*-----------------------------------------------------------*/
@@ -251,4 +263,11 @@ uint16_t vLdcSensorReadStatus( uint8_t deviceAddress ) {
 
 uint16_t vLdcSensorReadDeviceId( uint8_t deviceAddress ) {
     return vLdcSensorReadRegister(deviceAddress, 0x7F); // Register for LDC device id from datasheet
+}
+/*-----------------------------------------------------------*/
+
+BaseType_t vLdcSensorGetErrorStaus( void ) {
+    BaseType_t xReturn = recentReadError;
+    recentReadError = pdFALSE;
+    return xReturn;
 }

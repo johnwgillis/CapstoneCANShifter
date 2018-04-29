@@ -26,7 +26,7 @@ void vLedHelperInitialiseLED( unsigned portBASE_TYPE uxLED ) {
 		unsigned char ucBit = ( unsigned char ) 1;
 		ucBit <<= ledBit[uxLED];
 		*(ledDDR[uxLED]) |= ucBit;
-		*(ledPORT[uxLED]) &= ~ucBit;
+		*(ledPORT[uxLED]) |= ucBit;
 	}
 }
 /*-----------------------------------------------------------*/
