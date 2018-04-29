@@ -80,10 +80,7 @@ static uint32_t repeatedErrorCount = 0; // Used for detecting errors and rebooti
 
 int main( void ) {
 	/* Setup the LED's for output. */
-	vLedHelperInitialiseLED(mainCHECK_TASK_LED);
-
-	/* Setup the LED's for output of position. */
-	vLedHelperInitialiseLED(0); vLedHelperInitialiseLED(1); vLedHelperInitialiseLED(2); vLedHelperInitialiseLED(3);
+	vLedHelperInitialiseLED(0); vLedHelperInitialiseLED(1); vLedHelperInitialiseLED(2); vLedHelperInitialiseLED(3); vLedHelperInitialiseLED(4);
 
 	/* Setup UART */
 	serial_init(mainCOM_BAUD_RATE);
@@ -163,7 +160,7 @@ static void prvCheckOtherTasksAreStillRunning( void ) {
 		}
 	}
 
-	//printLDC1FullDebug();
+	printLDC1FullDebug();
 	printCurrentShifterPositionAndLEDOutput();
 }
 /*-----------------------------------------------------------*/
@@ -179,41 +176,69 @@ void printCurrentShifterPositionAndLEDOutput( void ) {
 	switch(currentPosition) {
 		case POS_1:
 			serial_transmit_string("1\n\0");
+			vLedHelperSetLED( 0, pdFALSE );
+			vLedHelperSetLED( 1, pdTRUE );
+			vLedHelperSetLED( 2, pdFALSE );
+			vLedHelperSetLED( 3, pdFALSE );
 			break;
 		case POS_2:
 			serial_transmit_string("2\n\0");
+			vLedHelperSetLED( 0, pdFALSE );
+			vLedHelperSetLED( 1, pdFALSE );
+			vLedHelperSetLED( 2, pdTRUE );
+			vLedHelperSetLED( 3, pdFALSE );
 			break;
 		case POS_3:
 			serial_transmit_string("3\n\0");
+			vLedHelperSetLED( 0, pdFALSE );
+			vLedHelperSetLED( 1, pdTRUE );
+			vLedHelperSetLED( 2, pdTRUE );
+			vLedHelperSetLED( 3, pdFALSE );
 			break;
 		case POS_4:
 			serial_transmit_string("4\n\0");
+			vLedHelperSetLED( 0, pdFALSE );
+			vLedHelperSetLED( 1, pdFALSE );
+			vLedHelperSetLED( 2, pdFALSE );
+			vLedHelperSetLED( 3, pdTRUE );
 			break;
 		case POS_5:
 			serial_transmit_string("5\n\0");
+			vLedHelperSetLED( 0, pdFALSE );
+			vLedHelperSetLED( 1, pdTRUE );
+			vLedHelperSetLED( 2, pdFALSE );
+			vLedHelperSetLED( 3, pdTRUE );
 			break;
 		case POS_6:
 			serial_transmit_string("6\n\0");
+			vLedHelperSetLED( 0, pdFALSE );
+			vLedHelperSetLED( 1, pdFALSE );
+			vLedHelperSetLED( 2, pdTRUE );
+			vLedHelperSetLED( 3, pdTRUE );
 			break;
 		case POS_7:
 			serial_transmit_string("7\n\0");
+			vLedHelperSetLED( 0, pdFALSE );
+			vLedHelperSetLED( 1, pdTRUE );
+			vLedHelperSetLED( 2, pdTRUE );
+			vLedHelperSetLED( 3, pdTRUE );
 			break;
 		case POS_8:
 			serial_transmit_string("8\n\0");
+			vLedHelperSetLED( 0, pdTRUE );
+			vLedHelperSetLED( 1, pdTRUE );
+			vLedHelperSetLED( 2, pdTRUE );
+			vLedHelperSetLED( 3, pdTRUE );
 			break;
 		case POS_UNKNOWN:
 		default:
 			serial_transmit_string("Unknown\n\0");
+			vLedHelperSetLED( 0, pdTRUE );
+			vLedHelperSetLED( 1, pdFALSE );
+			vLedHelperSetLED( 2, pdFALSE );
+			vLedHelperSetLED( 3, pdFALSE );
 			break;
 	}
-
-	// Ouput position as binary number via LEDs
-	uint8_t currentPositionNum = (uint8_t) currentPosition;
-	vLedHelperSetLED( 0, currentPositionNum & 0x1 );
-	vLedHelperSetLED( 1, currentPositionNum & 0x2 );
-	vLedHelperSetLED( 2, currentPositionNum & 0x4 );
-	vLedHelperSetLED( 3, currentPositionNum & 0x8 );
-	
 }
 /*-----------------------------------------------------------*/
 
