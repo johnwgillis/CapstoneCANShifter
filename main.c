@@ -12,12 +12,13 @@
 #include <util/delay.h>
 
 // Configure Output Mode for Pin PD.3
-#define OUTPUT_MODE_SERIAL_NOT_PWM 1
+#define OUTPUT_MODE_SERIAL_NOT_PWM 0
 
 #include <stdlib.h>
 #include <string.h>
 
 #include <avr/eeprom.h>
+#include <avr/wdt.h>
 
 /* Scheduler include files. */
 #include "FreeRTOS.h"
@@ -45,8 +46,14 @@ the LED is toggled.  If an error is found at any time the LED is never toggles
 again. */
 #define mainCHECK_TASK_LED				( 5 )
 
-/* The period between executions of the check task. */
-#define mainCHECK_PERIOD				( ( TickType_t ) 3000 / portTICK_PERIOD_MS  )
+/* The Watchdog time period to be used as hardware stall check backup. */
+#define mainCHECK_WATCHDOG				( WDTO_2S  )
+
+/* The period between executions of the check task (in ms). This must be less than mainCHECK_WATCHDOG to avoid hardware reset loop. */
+#define mainCHECK_PERIOD				( ( TickType_t ) 500 / portTICK_PERIOD_MS  )
+
+/* The number of stall errors before reboot. (Min time to recover: (mainCHECK_PERIOD * mainERRORS_TO_REBOOT) */
+#define mainERRORS_TO_REBOOT			( 4 )
 
 /*
  * The task function for the "Check" task.
@@ -65,6 +72,9 @@ void vApplicationIdleHook( void );
 void printCurrentShifterPosition( void );
 void printLDC1Register( char* registerName, uint8_t registerAddress );
 void printLDC1FullDebug( void );
+void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3"))); // To avoid Watchdog reset loop
+
+static uint32_t repeatedErrorCount = 0; // Used for detecting errors and rebooting
 
 /*-----------------------------------------------------------*/
 
@@ -98,12 +108,17 @@ static void vErrorChecks( void *pvParameters ) {
 	/* The parameters are not used. */
 	( void ) pvParameters;
 
+	// Enable Watchdog
+	wdt_enable(mainCHECK_WATCHDOG);
+
 	/* Cycle for ever, delaying then checking all the other tasks are still
 	operating without error. */
 	for( ;; ) {
 		vTaskDelay( mainCHECK_PERIOD );
 
 		prvCheckOtherTasksAreStillRunning();
+
+		wdt_reset();
 	}
 }
 /*-----------------------------------------------------------*/
@@ -119,6 +134,23 @@ static void prvCheckOtherTasksAreStillRunning( void ) {
 		/* Toggle the LED if everything is okay so we know if an error occurs even if not
 		using console IO. */
 		vLedHelperToggleLED( mainCHECK_TASK_LED );
+
+		// Reset repeated error counter
+		repeatedErrorCount = 0;
+
+	} else {
+		repeatedErrorCount ++;
+
+		if( repeatedErrorCount >= mainERRORS_TO_REBOOT ) {
+			// Reboot due to repeated stall errors
+			serial_transmit_string("REBOOT: Too many stall errors\n\0");
+
+			// Reboot using Watchdog
+			vTaskSuspendAll();
+			wdt_enable(WDTO_15MS);
+			while(1);
+
+		}
 	}
 
 	serial_transmit_string("\n\n\0");
@@ -214,5 +246,13 @@ void printLDC1FullDebug( void ) {
 	printLDC1Register("Status\0", 0x18); // Status
 	printLDC1Register("Config\0", 0x1A); // Config
 	printLDC1Register("ERROR_CONFIG\0", 0x19); // ERROR_CONFIG
+}
+/*-----------------------------------------------------------*/
+
+// To avoid Watchdog reset loop
+void wdt_init(void) {
+    MCUSR = 0;
+    wdt_disable();
+    return;
 }
 /*-----------------------------------------------------------*/
