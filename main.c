@@ -44,7 +44,7 @@ tasks just use the idle priority. */
 that all the other tasks are operating without error.  If no errors are found
 the LED is toggled.  If an error is found at any time the LED is never toggles
 again. */
-#define mainCHECK_TASK_LED				( 4 )
+#define mainCHECK_TASK_LED				( 0 )
 
 /* The Watchdog time period to be used as hardware stall check backup. */
 #define mainCHECK_WATCHDOG				( WDTO_2S  )
@@ -176,67 +176,67 @@ void printCurrentShifterPositionAndLEDOutput( void ) {
 	switch(currentPosition) {
 		case POS_1:
 			serial_transmit_string("1\n\0");
-			vLedHelperSetLED( 0, pdFALSE );
 			vLedHelperSetLED( 1, pdTRUE );
 			vLedHelperSetLED( 2, pdFALSE );
 			vLedHelperSetLED( 3, pdFALSE );
+			vLedHelperSetLED( 4, pdFALSE );
 			break;
 		case POS_2:
 			serial_transmit_string("2\n\0");
-			vLedHelperSetLED( 0, pdFALSE );
 			vLedHelperSetLED( 1, pdFALSE );
 			vLedHelperSetLED( 2, pdTRUE );
 			vLedHelperSetLED( 3, pdFALSE );
+			vLedHelperSetLED( 4, pdFALSE );
 			break;
 		case POS_3:
 			serial_transmit_string("3\n\0");
-			vLedHelperSetLED( 0, pdFALSE );
 			vLedHelperSetLED( 1, pdTRUE );
 			vLedHelperSetLED( 2, pdTRUE );
 			vLedHelperSetLED( 3, pdFALSE );
+			vLedHelperSetLED( 4, pdFALSE );
 			break;
 		case POS_4:
 			serial_transmit_string("4\n\0");
-			vLedHelperSetLED( 0, pdFALSE );
 			vLedHelperSetLED( 1, pdFALSE );
 			vLedHelperSetLED( 2, pdFALSE );
 			vLedHelperSetLED( 3, pdTRUE );
+			vLedHelperSetLED( 4, pdFALSE );
 			break;
 		case POS_5:
 			serial_transmit_string("5\n\0");
-			vLedHelperSetLED( 0, pdFALSE );
 			vLedHelperSetLED( 1, pdTRUE );
 			vLedHelperSetLED( 2, pdFALSE );
 			vLedHelperSetLED( 3, pdTRUE );
+			vLedHelperSetLED( 4, pdFALSE );
 			break;
 		case POS_6:
 			serial_transmit_string("6\n\0");
-			vLedHelperSetLED( 0, pdFALSE );
 			vLedHelperSetLED( 1, pdFALSE );
 			vLedHelperSetLED( 2, pdTRUE );
 			vLedHelperSetLED( 3, pdTRUE );
+			vLedHelperSetLED( 4, pdFALSE );
 			break;
 		case POS_7:
 			serial_transmit_string("7\n\0");
-			vLedHelperSetLED( 0, pdFALSE );
 			vLedHelperSetLED( 1, pdTRUE );
 			vLedHelperSetLED( 2, pdTRUE );
 			vLedHelperSetLED( 3, pdTRUE );
+			vLedHelperSetLED( 4, pdFALSE );
 			break;
 		case POS_8:
 			serial_transmit_string("8\n\0");
-			vLedHelperSetLED( 0, pdTRUE );
-			vLedHelperSetLED( 1, pdTRUE );
-			vLedHelperSetLED( 2, pdTRUE );
-			vLedHelperSetLED( 3, pdTRUE );
+			vLedHelperSetLED( 1, pdFALSE );
+			vLedHelperSetLED( 2, pdFALSE );
+			vLedHelperSetLED( 3, pdFALSE );
+			vLedHelperSetLED( 4, pdTRUE );
 			break;
 		case POS_UNKNOWN:
 		default:
 			serial_transmit_string("Unknown\n\0");
-			vLedHelperSetLED( 0, pdTRUE );
 			vLedHelperSetLED( 1, pdFALSE );
 			vLedHelperSetLED( 2, pdFALSE );
 			vLedHelperSetLED( 3, pdFALSE );
+			vLedHelperSetLED( 4, pdFALSE );
 			break;
 	}
 }
